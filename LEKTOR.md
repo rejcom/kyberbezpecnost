@@ -19,7 +19,7 @@ Externí nástroje jsou doplněk, nikoli povinná registrace či nahrávání so
 3. 15 min: sítě, oprávnění, faktory. 10 min: firewall, hotspot a správce hesel.
    15 min: návrh přihlášení, kvíz MFA, podle vybavení hotspot. 5 min: rozbor.
 4. 15 min: web, prohlížeč, komunikace a mobil. 10 min: klikací e-mail a nastavení.
-   15 min dohromady: URL 5 min, cvičný profil 5 min, oprávnění 5 min. 5 min: rozbor.
+   15 min dohromady: URL 3 min, ČOI 3 min, cvičný profil 5 min, oprávnění 4 min. 5 min: rozbor.
 5. 15 min: zálohy, mazání, fyzická ochrana a AI. 10 min: obnova a ověření zdroje.
    15 min dohromady: obnova 8 min, telefonát 4 min, reakce na incident 3 min.
    5 min: závěrečný kvíz. Slovníček a zdroje jsou referenční přílohy mimo časový plán.
@@ -50,3 +50,5 @@ nadiktované podezřelým volajícím.
 V hodině 2 použijte upozornění NÚKIB na PHP z 21. 10. 2026 jako dvouminutový příklad v rámci stávajícího výkladu aktualizací. Neprodlužuje plán 225 minut. Před dalším školením ověřte aktuální pokyny na odkazovaném oficiálním zdroji.
 
 Hodina 3: z 15 minut praxe věnujte 5 minut Hesloměru (náhled a přímý odkaz jsou na slajdu), 7 minut návrhu zabezpečení fiktivního účtu a kvízu MFA, 3 minuty hotspotu podle vybavení. Při nedostupnosti nástroje porovnejte veřejné příklady offline a vysvětlete model online/offline útoku. Skutečná hesla ani PINy se nezadávají.
+
+ČOI v hodině 4: účastníci pracují pouze s oficiálními záznamy a neotevírají rizikové domény. Vyberou záznam, vysvětlí důvod a datum; zdůrazněte neúplnost seznamu. Tříminutové cvičení nahrazuje část stávající praxe, neprodlužuje kurz. Offline použijte modelový obchod bez ověřitelného prodejce.
