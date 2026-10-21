@@ -48,3 +48,5 @@ nenahradí unikátnost a MFA. Zpětné volání použije známé číslo, ne č�
 nadiktované podezřelým volajícím.
 
 V hodině 2 použijte upozornění NÚKIB na PHP z 21. 10. 2026 jako dvouminutový příklad v rámci stávajícího výkladu aktualizací. Neprodlužuje plán 225 minut. Před dalším školením ověřte aktuální pokyny na odkazovaném oficiálním zdroji.
+
+Hodina 3: z 15 minut praxe věnujte 5 minut Hesloměru (náhled a přímý odkaz jsou na slajdu), 7 minut návrhu zabezpečení fiktivního účtu a kvízu MFA, 3 minuty hotspotu podle vybavení. Při nedostupnosti nástroje porovnejte veřejné příklady offline a vysvětlete model online/offline útoku. Skutečná hesla ani PINy se nezadávají.
