@@ -46,3 +46,5 @@ originál sylabu není v projektu reprodukován. Organizační pravidla a modern
 doporučení vysvětlete v kontextu; například rutinní obměna hesel sama
 nenahradí unikátnost a MFA. Zpětné volání použije známé číslo, ne číslo
 nadiktované podezřelým volajícím.
+
+V hodině 2 použijte upozornění NÚKIB na PHP z 21. 10. 2026 jako dvouminutový příklad v rámci stávajícího výkladu aktualizací. Neprodlužuje plán 225 minut. Před dalším školením ověřte aktuální pokyny na odkazovaném oficiálním zdroji.
