@@ -52,3 +52,5 @@ V hodině 2 použijte upozornění NÚKIB na PHP z 21. 10. 2026 jako dvouminutov
 Hodina 3: z 15 minut praxe věnujte 5 minut Hesloměru (náhled a přímý odkaz jsou na slajdu), 7 minut návrhu zabezpečení fiktivního účtu a kvízu MFA, 3 minuty hotspotu podle vybavení. Při nedostupnosti nástroje porovnejte veřejné příklady offline a vysvětlete model online/offline útoku. Skutečná hesla ani PINy se nezadávají.
 
 ČOI v hodině 4: účastníci pracují pouze s oficiálními záznamy a neotevírají rizikové domény. Vyberou záznam, vysvětlí důvod a datum; zdůrazněte neúplnost seznamu. Tříminutové cvičení nahrazuje část stávající praxe, neprodlužuje kurz. Offline použijte modelový obchod bez ověřitelného prodejce.
+
+Hodina 4: v 10 minutách ukázek vyhraďte 3 minuty české pomůcce Co o vás vím? (fingerprint), 4 minuty rozboru e-mailu a 3 minuty nastavení prohlížeče. Nahrazuje původní výklad Cover Your Tracks; ten zůstává volitelným odkazem. Účastníci nemusí spouštět zjištění IP ani povolovat polohu; vysvětlete externí požadavek ipwho.is a rozdíl mezi odhadem z IP a geolokací. Veřejné sdílení výsledků nevyžadujte.
