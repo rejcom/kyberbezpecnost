@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Kyberbezpečnost — Modul 12</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout concept: full-screen 16:9 slide stage, one slide visible at a time,
+     fixed top progress rail + bottom control bar, scrollable content slides.
+     Demo links are cards with a real screenshot thumbnail + plain-language explainer. */
+  :root{
+    --bg:#f4f6fb; --bg-2:#ffffff; --panel:#ffffff; --panel-2:#eef1f8;
+    --fg:#141a2b; --muted:#56607a; --faint:#8a93a8;
+    --line:#dce1ee; --line-2:#c7cde0;
+    --accent:#0a7ea4; --accent-2:#0369a1; --accent-soft:#e2f1f7;
+    --warn:#b45309; --warn-soft:#fdf0dd; --danger:#be1240; --danger-soft:#fbe4ea; --ok:#15803d;
+    --shadow:0 1px 2px rgba(20,26,43,.06),0 8px 24px rgba(20,26,43,.08);
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,"Segoe UI",Roboto,sans-serif;
+    --display:"Sora","IBM Plex Sans",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0b0f1a; --bg-2:#0e1422; --panel:#141b2d; --panel-2:#1b2439;
+    --fg:#eaeef7; --muted:#9aa4bd; --faint:#6b7595;
+    --line:#26304a; --line-2:#323e5e;
+    --accent:#38bdf8; --accent-2:#7dd3fc; --accent-soft:#0f2638;
+    --warn:#f6ad55; --warn-soft:#2a2113; --danger:#fb7185; --danger-soft:#2a1620; --ok:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0b0f1a; --bg-2:#0e1422; --panel:#141b2d; --panel-2:#1b2439;
+    --fg:#eaeef7; --muted:#9aa4bd; --faint:#6b7595;
+    --line:#26304a; --line-2:#323e5e;
+    --accent:#38bdf8; --accent-2:#7dd3fc; --accent-soft:#0f2638;
+    --warn:#f6ad55; --warn-soft:#2a2113; --danger:#fb7185; --danger-soft:#2a1620; --ok:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  *{box-sizing:border-box}
+
+  #rail{position:fixed;top:env(safe-area-inset-top,0);left:0;right:0;height:3px;background:transparent;z-index:40}
+  #rail>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s ease}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:39}
+
+  #stage{position:relative;min-height:100%;display:flex;flex-direction:column}
+  .slide{display:none;flex:1;flex-direction:column;justify-content:center;
+    padding:clamp(24px,4.5vw,64px);
+    padding-left:max(clamp(24px,4.5vw,64px),env(safe-area-inset-left,0px));
+    padding-right:max(clamp(24px,4.5vw,64px),env(safe-area-inset-right,0px));
+    padding-top:max(44px,calc(env(safe-area-inset-top,0px) + 34px));
+    padding-bottom:max(84px,calc(env(safe-area-inset-bottom,0px) + 72px));
+    min-height:100vh;overflow-y:auto}
+  .slide.is-active{display:flex;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.slide.is-active{animation:none}}
+  .wrap{width:100%;max-width:1120px;margin:0 auto}
+
+  h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;font-weight:700;letter-spacing:-.01em}
+  .eyebrow{font-family:var(--mono);font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+  .chip{display:inline-flex;align-items:center;gap:.4em;font-family:var(--mono);font-size:.74rem;padding:.28em .6em;border:1px solid var(--line-2);border-radius:999px;color:var(--muted);background:var(--panel-2)}
+  .chip.ref{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+  .lead{color:var(--muted);font-size:1.02rem;max-width:64ch}
+  .kicker{font-family:var(--mono);color:var(--faint);font-size:.8rem}
+
+  .title h1{font-size:clamp(2.2rem,6vw,4.2rem);line-height:1.03}
+  .title .sub{font-size:clamp(1.02rem,2.3vw,1.35rem);color:var(--muted);margin-top:18px;max-width:42ch}
+  .brandline{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+  .glyph{font-family:var(--mono);color:var(--accent);opacity:.6}
+
+  .otable{display:grid;gap:9px;margin-top:20px}
+  .orow{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 16px;box-shadow:var(--shadow)}
+  .onum{font-family:var(--display);font-weight:700;font-size:1.3rem;color:var(--accent);width:1.6em;text-align:center}
+  .otitle{font-weight:600}
+  .orow small{color:var(--muted);font-weight:400}
+  .orefs{font-family:var(--mono);font-size:.74rem;color:var(--faint);white-space:nowrap}
+  @media (max-width:560px){.orow{grid-template-columns:auto 1fr}.orefs{display:none}}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:22px;align-items:start}
+  @media (max-width:760px){.cols{grid-template-columns:1fr;gap:18px}}
+  .block h3{font-size:1rem;margin-bottom:11px;display:flex;align-items:center;gap:8px}
+  .block h3 .bar{width:14px;height:2px;background:var(--accent);border-radius:2px}
+  ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  ul.pts li{position:relative;padding-left:18px;color:var(--fg);font-size:.95rem}
+  ul.pts li::before{content:"›";position:absolute;left:2px;top:-1px;color:var(--accent);font-weight:700}
+  ul.pts li b{font-weight:600}
+  ul.pts li .def{color:var(--muted)}
+  ul.sub{list-style:none;margin:6px 0 0;padding:0 0 0 2px;display:flex;flex-direction:column;gap:5px;border-left:2px solid var(--line);padding-left:12px}
+  ul.sub li{font-size:.9rem;color:var(--muted)}
+  ul.sub li b{color:var(--fg);font-weight:600}
+
+  /* demo cards with screenshot */
+  .demos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:4px}
+  .demos.d2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  a.demo{display:flex;flex-direction:column;text-decoration:none;color:inherit;overflow:hidden;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    transition:border-color .15s,transform .15s}
+  a.demo:hover,a.demo:focus-visible{border-color:var(--accent);transform:translateY(-3px);outline:none}
+  a.demo:focus-visible{box-shadow:0 0 0 3px var(--accent-soft)}
+  a.demo img,a.demo .thumb{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top center;
+    display:block;background:var(--panel-2);border-bottom:1px solid var(--line)}
+  a.demo .thumb{display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--accent-soft),var(--panel-2));color:var(--accent);
+    font-family:var(--mono);font-size:.85rem;letter-spacing:.04em;text-align:center;padding:0 10px}
+  .dbody{padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .dname{font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .durl{font-family:var(--mono);font-size:.8rem;color:var(--accent);word-break:break-all}
+  .dnote{color:var(--muted);font-size:.86rem;margin-top:3px}
+  .ext{color:var(--faint);margin-left:auto}
+  a.demo:hover .ext{color:var(--accent)}
+  .tag{font-family:var(--mono);font-size:.64rem;text-transform:uppercase;letter-spacing:.07em;
+    padding:.18em .5em;border-radius:6px;background:var(--panel-2);color:var(--muted);white-space:nowrap}
+  .tag.live{background:var(--accent-soft);color:var(--accent)}
+  .tag.cz{background:var(--warn-soft);color:var(--warn)}
+
+  .note{display:flex;gap:12px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
+    border-radius:14px;padding:13px 16px;margin-top:20px;font-size:.9rem;color:var(--fg)}
+  .note .ic{color:var(--warn);font-weight:700;font-family:var(--mono)}
+  .note.legal{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+  .note.legal .ic{color:var(--danger)}
+  .note.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+  .note.ok .ic{color:var(--ok)}
+
+  .queries{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+  .q{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;
+    font-family:var(--mono);font-size:.85rem;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px}
+  .q code{color:var(--accent);white-space:nowrap;overflow-x:auto}
+  .q span{font-family:var(--sans);color:var(--muted);font-size:.84rem}
+  @media (max-width:560px){.q{grid-template-columns:1fr;gap:2px}}
+
+  .viz{display:grid;gap:7px;margin-top:8px}
+  .vrow{display:grid;grid-template-columns:5.2em 1fr auto;gap:10px;align-items:center;font-size:.85rem}
+  .vrow .vl{font-family:var(--mono);color:var(--muted)}
+  .vbar{height:15px;border-radius:5px;background:linear-gradient(90deg,var(--accent),var(--accent-2));min-width:6px}
+  .vrow .vv{font-family:var(--mono);color:var(--fg);font-size:.8rem;white-space:nowrap}
+
+  /* threat names table */
+  .names{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-top:4px}
+  @media (max-width:640px){.names{grid-template-columns:1fr}}
+  .names div{font-size:.9rem}
+  .names code{font-family:var(--mono);color:var(--accent);font-size:.82rem}
+  .names span{color:var(--muted)}
+
+  .divider .big{font-family:var(--display);font-weight:700;font-size:clamp(3rem,13vw,8rem);line-height:.9;
+    color:var(--accent);opacity:.18;letter-spacing:-.03em}
+  .divider h2{font-size:clamp(1.7rem,5vw,3rem);margin-top:-.2em}
+  .divider .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px}
+
+  .ten{display:grid;grid-template-columns:1fr 1fr;gap:9px 26px;margin-top:20px;list-style:none;padding:0}
+  @media (max-width:720px){.ten{grid-template-columns:1fr}}
+  .ten li{display:flex;gap:12px;align-items:baseline;font-size:.95rem}
+  .ten .n{font-family:var(--mono);color:var(--accent);font-weight:500;width:1.6em;flex-shrink:0}
+
+  .foot{margin-top:24px;font-size:.78rem;color:var(--faint);font-family:var(--mono)}
+  .kbd{font-family:var(--mono);font-size:.76rem;background:var(--panel-2);border:1px solid var(--line-2);border-radius:5px;padding:.1em .45em;color:var(--muted)}
+
+  #bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;gap:10px;
+    padding:10px max(18px,env(safe-area-inset-right,0)) calc(10px + env(safe-area-inset-bottom,0)) max(18px,env(safe-area-inset-left,0));
+    background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+  #bar button{font-family:var(--sans);font-size:.85rem;color:var(--fg);background:var(--panel);
+    border:1px solid var(--line-2);border-radius:10px;padding:7px 12px;cursor:pointer;line-height:1;transition:.15s}
+  #bar button:hover{border-color:var(--accent);color:var(--accent)}
+  #bar .count{font-family:var(--mono);font-size:.8rem;color:var(--muted);min-width:4.5em;text-align:center}
+  #bar .title-min{font-size:.82rem;color:var(--faint);margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  #menu{position:fixed;inset:0;z-index:50;display:none;background:color-mix(in srgb,var(--bg) 93%,transparent);
+    backdrop-filter:blur(6px);padding:max(28px,env(safe-area-inset-top,0)) 20px 28px;overflow-y:auto}
+  #menu.open{display:block}
+  #menu .mwrap{max-width:720px;margin:0 auto}
+  #menu h3{font-size:.95rem;margin-bottom:14px;color:var(--muted);font-family:var(--mono);font-weight:500;text-transform:uppercase;letter-spacing:.1em}
+  #menu ol{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+  #menu li{display:flex;gap:14px;align-items:baseline;padding:9px 12px;border-radius:10px;cursor:pointer}
+  #menu li:hover{background:var(--panel)}
+  #menu li.cur{background:var(--accent-soft)}
+  #menu li .mi{font-family:var(--mono);color:var(--accent);font-size:.8rem;width:2em}
+  #menu li .mt{font-weight:500}
+  #closeMenu{position:absolute;top:max(20px,env(safe-area-inset-top,0));right:20px;background:var(--panel);
+    border:1px solid var(--line-2);border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--fg);font-size:.85rem}
+
+  body{margin:0} button,a,summary{touch-action:manipulation} button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  h2{font-size:clamp(1.55rem,3.2vw,2.4rem);line-height:1.2} .lesson-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+  .panel,.mock{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;min-width:0}.panel h3{margin-bottom:12px}.panel p{margin:8px 0}.panel li{margin:8px 0}.panel ol,.panel ul{padding-left:22px}
+  .mock{background:var(--panel-2);margin-top:18px}.mock-label{font: .75rem var(--mono);color:var(--accent);margin-bottom:12px}.mock code{overflow-wrap:anywhere}.reveal{margin-top:16px;border:1px solid var(--line-2);border-radius:12px;padding:14px;background:var(--accent-soft)}summary{cursor:pointer;font-weight:600}.reveal p{margin-bottom:0}
+  .answer{display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid var(--line-2);border-radius:10px;background:var(--panel);color:var(--fg);font:inherit;cursor:pointer}.answer[aria-pressed="true"]{border:2px solid var(--accent)}.feedback{padding:12px;background:var(--accent-soft);border-radius:10px}.annotate{background:transparent;color:inherit;border:1px dashed var(--accent);padding:7px;border-radius:7px;font:inherit;cursor:pointer;text-align:left;max-width:100%;overflow-wrap:anywhere}.annotate[aria-expanded="true"]{background:var(--accent-soft)}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.flow span{padding:15px;background:var(--accent-soft);border-radius:10px}.source{font-size:.8rem;color:var(--muted);margin-top:18px}.source a,.panel a{color:var(--accent)}.optional-label{color:var(--warn);font: .78rem var(--mono);margin-bottom:12px}.glossary-list{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px}.glossary-list dt{font-weight:600;color:var(--accent)}.glossary-list dd{margin:4px 0 12px}.lesson-time{display:inline-block;margin-top:12px;font: .8rem var(--mono);color:var(--muted)}
+  #menu li{display:block;padding:0}#menu li button{width:100%;display:flex;gap:14px;background:transparent;color:var(--fg);border:0;padding:10px;text-align:left;font:inherit;cursor:pointer}#menu .menu-tools{margin-bottom:16px}#menu .menu-tools button{padding:10px;font:inherit;cursor:pointer}#bar button:disabled{opacity:.4;cursor:default}
+  @media(max-width:760px){.lesson-grid,.glossary-list{grid-template-columns:1fr}.panel,.mock{padding:16px}#bar{gap:5px;padding-left:8px;padding-right:8px}#bar .title-min{display:none}#bar button{padding:10px 8px}#bar .count{margin-right:auto}.slide{padding-left:18px;padding-right:18px}}
+  @media print{#bar,#rail,#menu{display:none!important}.slide,.slide.is-active{display:block!important;min-height:0;break-after:page;padding:24px;animation:none}.slide[data-optional]{display:none!important}details>*{display:block!important}.lesson-grid{grid-template-columns:1fr 1fr}body{background:white;color:black}}
+</style>
+</head>
+<body>
+
+<div id="rail"><span></span></div>
+
+<div id="stage">
+
+  <!-- 1 TITLE -->
+  <section class="slide title" data-title="Úvod">
+    <div class="wrap">
+      <div class="eyebrow">ECDL / ICDL · Sylabus 2.1</div>
+      <h1>Bezpečné používání<br>informačních technologií</h1>
+      <p class="sub">Modul 12 — Cyber Security. Školení s živými ukázkami a odkazy na reálné nástroje.</p>
+      <div class="brandline">
+        <span class="chip ref">12.1 – 12.8</span>
+        <span class="chip">5 vyučovacích hodin</span>
+        <span class="chip">8 kapitol</span>
+        <span class="chip">klikací dema</span>
+      </div>
+      <p class="foot"><span class="glyph">↔</span> šipky nebo <span class="kbd">mezerník</span> · <span class="kbd">O</span> osnova · dema se otevírají v novém panelu</p>
+    </div>
+  </section>
+
+  <!-- 2 OVERVIEW -->
+<section class="slide" data-title="Jak budeme pracovat"><div class="wrap"><div class="eyebrow">225 minut · 5 × 45 minut</div><h2>Jak budeme pracovat</h2><div class="lesson-grid"><div class="panel"><h3>Každou hodinu něco zvládnete</h3><p>15 minut vysvětlení → 10 minut ukázky → 15 minut cvičení → 5 minut vyhodnocení.</p><p>Přestávky jsou mimo uvedených 225 minut. Zajímavosti označené „Volitelné“ využijeme jen při časové rezervě.</p></div><div class="panel"><h3>Připravte si</h3><p>Počítač s prohlížečem; pro některé úkoly desktopový Word nebo archivátor. Telefon je volitelný.</p><p>Pracujeme s fiktivními údaji. Bez potřebného programu řešte úkol ve dvojici nebo sledujte lektora. Názvy nastavení se liší podle verze a správy organizace.</p><p>Klávesa O otevře osnovu a slovníček. Obnovit stránku znamená začít znovu.</p></div></div></div></section>
+  <section class="slide" data-title="Osnova 5 hodin">
+    <div class="wrap">
+      <div class="eyebrow">Rozvržení</div>
+      <h2>Pět hodin, osm kapitol</h2>
+      <div class="otable">
+        <div class="orow"><div class="onum">1</div><div class="otitle">Koncepce bezpečnosti <small>— data, hrozby, sociální inženýrství, krádež identity</small></div><div class="orefs">12.1</div></div>
+        <div class="orow"><div class="onum">2</div><div class="otitle">Soubory a škodlivé programy <small>— šifrování, malware, antivir, karanténa</small></div><div class="orefs">12.1.4 · 12.2</div></div>
+        <div class="orow"><div class="onum">3</div><div class="otitle">Sítě a řízení přístupu <small>— Wi-Fi, firewall, hesla, biometrie, MFA</small></div><div class="orefs">12.3 · 12.4</div></div>
+        <div class="orow"><div class="onum">4</div><div class="otitle">Web a komunikace <small>— HTTPS, phishing, sociální sítě, mobil, soukromí</small></div><div class="orefs">12.5 · 12.6</div></div>
+        <div class="orow"><div class="onum">5</div><div class="otitle">Data a AI hrozby <small>— zálohy, mazání, deepfake, hlasové podvody</small></div><div class="orefs">12.7 · 12.8</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 DIVIDER 1 -->
+  <section class="slide divider" data-title="Hodina 1">
+    <div class="wrap">
+      <div class="big">01</div>
+      <h2>Koncepce bezpečnosti</h2>
+      <div class="meta">
+        <span class="chip ref">12.1.1 Ohrožení dat</span>
+        <span class="chip ref">12.1.2 Hodnota dat</span>
+        <span class="chip ref">12.1.3 Osobní bezpečnost</span>
+      </div>
+      <p class="lead" style="margin-top:18px">Proč na bezpečnosti záleží, co znamená důvěrnost, integrita a dostupnost, role podle GDPR a jak funguje manipulace člověkem.</p>
+    </div>
+  </section>
+
+  <!-- 4 L1 terms -->
+  <section class="slide" data-title="H1 — pojmy">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 1 · pojmy</div>
+      <h2>Základní pojmy bezpečnosti</h2>
+      <div class="cols">
+        <div class="block">
+          <h3><span class="bar"></span>Data, bezpečnost, GDPR</h3>
+          <ul class="pts">
+            <li><b>Data vs. informace</b> <span class="def">— data jsou holá fakta („38,5"), informace jsou data v kontextu („pacient má horečku 38,5 °C").</span></li>
+            <li><b>Triáda CIA</b> <span class="def">— tři pilíře bezpečnosti:</span>
+              <ul class="sub">
+                <li><b>Důvěrnost</b> — data vidí jen oprávnění.</li>
+                <li><b>Integrita</b> — data nejsou nepozorovaně změněna.</li>
+                <li><b>Dostupnost</b> — data jsou po ruce, když je potřebujete.</li>
+              </ul>
+            </li>
+            <li><b>Role podle GDPR</b>
+              <ul class="sub">
+                <li><b>Subjekt údajů</b> — člověk, o kterém data jsou.</li>
+                <li><b>Správce</b> — určuje, proč a jak se data zpracují (např. úřad).</li>
+                <li><b>Zpracovatel</b> — zpracovává data pro správce (např. mzdová firma).</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Sociální inženýrství &amp; krádež identity</h3>
+          <ul class="pts">
+            <li><b>Sociální inženýrství</b> <span class="def">— manipulace člověkem místo útoku na techniku:</span>
+              <ul class="sub">
+                <li><b>Phishing</b> — podvodné e-maily/SMS lákající hesla nebo peníze.</li>
+                <li><b>Vishing</b> — totéž po telefonu; volající se vydává za banku nebo IT a tlačí k rychlé akci.</li>
+                <li><b>Shoulder surfing</b> — „čtení přes rameno"; odezírání hesla, PINu nebo obrazovky na veřejnosti.</li>
+                <li><b>Pretexting</b> — vymyšlená záminka („volám z IT, potřebuji vaše heslo").</li>
+              </ul>
+            </li>
+            <li><b>Krádež identity</b> <span class="def">— zneužití cizí identity:</span>
+              <ul class="sub">
+                <li><b>Information diving</b> — hledání údajů ve vyhozených dokumentech a discích.</li>
+                <li><b>Skimming</b> — kopírování údajů z platební karty čtečkou (např. na bankomatu).</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 L1 demos -->
+  <section class="slide" data-title="H1 — ukázky">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 1 · vyzkoušejte</div>
+      <h2>Kolik toho o vás už uniklo</h2>
+      <div class="demos">
+        <a class="demo" href="https://haveibeenpwned.com" target="_blank" rel="noopener">
+          <img src="images/hibp.jpg" alt="Have I Been Pwned" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Have I Been Pwned <span class="ext">↗</span></span>
+            <span class="durl">haveibeenpwned.com</span>
+            <span class="dnote">Zadáte e-mailovou adresu a web ukáže, v kterých únicích dat se objevila. Použijte jen vlastní adresu dobrovolně; výsledek není úplný seznam všech úniků.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">
+          <div class="thumb">Pwned Passwords</div>
+          <div class="dbody">
+            <span class="dname">Pwned Passwords <span class="ext">↗</span></span>
+            <span class="durl">haveibeenpwned.com/Passwords</span>
+            <span class="dnote">Ukáže, kolikrát se dané heslo objevilo v únicích. Zkoušejte pouze veřejné příklady, nikdy své skutečné heslo.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://cybermap.kaspersky.com" target="_blank" rel="noopener">
+          <div class="thumb">Mapa útoků · živě</div>
+          <div class="dbody">
+            <span class="dname">Mapa kybernetických útoků <span class="ext">↗</span></span>
+            <span class="durl">cybermap.kaspersky.com</span>
+            <span class="dnote">Zobrazuje útoky zachycené po celém světě v reálném čase. Dobrý vizuální úvod do tématu.</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 DIVIDER 2 -->
+<section class="slide" data-title="Kdo a co ohrožuje data"><div class="wrap"><div class="eyebrow">12.1.1–12.1.2</div><h2>Kdo a co ohrožuje data</h2><div class="lesson-grid"><div class="panel"><h3>Stejný dopad, jiná příčina</h3><p><b>Počítačová kriminalita:</b> trestná činnost využívající IT. <b>Hacking:</b> zkoumání či překonávání systému; rozhoduje mimo jiné oprávnění a účel.</p><p>Útočník ukradne seznam klientů. Zaměstnanec ho omylem pošle jinam. Požár zničí jediný disk. Výpadek poskytovatele znemožní přístup do cloudu.</p></div><div class="panel"><h3>Co pomáhá</h3><p><b>Bezpečnostní politika:</b> pravidla organizace pro účty, zařízení, data a hlášení problémů.</p><p><b>Nejmenší oprávnění:</b> každý vidí pouze to, co potřebuje. Data třídíme, určíme vlastníka i dobu uchování.</p><p>Cloud znamená také závislost na provozovateli, dostupnosti a nastavení sdílení. Veřejný odkaz může zpřístupnit soubor komukoli.</p></div></div></div></section><section class="slide" data-title="Cvičení: co se pokazilo?"><div class="wrap"><div class="eyebrow">Hodina 1 · 15 minut včetně rozboru</div><h2>Cvičení: co se pokazilo?</h2><div class="lesson-grid"><div class="panel"><h3>Tři situace</h3><ol><li>Někdo změní číslo účtu na faktuře.</li><li>Tabulka mezd má veřejný odkaz.</li><li>Notebook s jedinou kopií dat zůstane ve vlaku.</li></ol><p>Ke každé situaci určete: co je ohroženo, koho se problém týká a jak mu předejít.</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>1. Integrita: kontrola změn a ověření účtu jiným kanálem. 2. Důvěrnost: omezení sdílení a přístupů. 3. Dostupnost i důvěrnost: zálohy, šifrování, zámek a fyzická ochrana. Jedna událost může ohrozit více pilířů.</p></details></div><div class="panel"><h3>Telefon z „IT“</h3><div class="mock"><div class="mock-label">MODELOVÝ HOVOR</div>„Jsem váš nový technik. Hned mi nadiktujte kód z SMS, jinak vám zablokujeme účet.“</div><p>Ve dvojici nacvičte odmítnutí a ověření identity. Pojmenujte použitou manipulační techniku.</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Pretexting a vishing: záminka, autorita a časový tlak. Kód nesdělujte, hovor ukončete a kontaktujte IT známým firemním kanálem.</p></details></div></div></div></section>
+  <section class="slide divider" data-title="Hodina 2">
+    <div class="wrap">
+      <div class="big">02</div>
+      <h2>Soubory a škodlivé programy</h2>
+      <div class="meta">
+        <span class="chip ref">12.1.4 Bezpečnost souborů</span>
+        <span class="chip ref">12.2 Škodlivé programy</span>
+      </div>
+      <p class="lead" style="margin-top:18px">Makra a šifrování, přehled druhů malwaru, jak pracuje antivir a co dělat s nakaženým souborem.</p>
+    </div>
+  </section>
+
+  <!-- 7 L2 terms -->
+  <section class="slide" data-title="H2 — pojmy">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 2 · pojmy</div>
+      <h2>Šifrování a druhy malwaru</h2>
+      <div class="cols">
+        <div class="block">
+          <h3><span class="bar"></span>Soubory a ochrana</h3>
+          <ul class="pts">
+            <li><b>Makra</b> <span class="def">— automatizace v Office; častý nosič malwaru. Office je dnes u souborů z internetu ve výchozím stavu blokuje.</span></li>
+            <li><b>Šifrování</b> <span class="def">— převede data do nečitelné podoby; bez klíče je nikdo nepřečte. Pozor: ztracený klíč = ztracená data.</span></li>
+            <li><b>Antivir</b> <span class="def">— hledá podle signatur i podle chování (heuristika). Ani aktuální antivir nezachytí vše; nové hrozby může odhalit podle chování.</span></li>
+            <li><b>Karanténa</b> <span class="def">— izolované úložiště, kde podezřelý soubor nemůže škodit a lze ho obnovit nebo smazat.</span></li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Druhy malwaru</h3>
+          <ul class="sub" style="border-color:var(--line-2)">
+            <li><b>Virus</b> — šíří se připojený k souboru. <b>Červ</b> — šíří se sám po síti.</li>
+            <li><b>Trojský kůň</b> — tváří se jako užitečný program.</li>
+            <li><b>Rootkit</b> — skrývá svou přítomnost. <b>Backdoor</b> — zadní vrátka pro útočníka.</li>
+            <li><b>Spyware</b> — špehuje. <b>Keylogger</b> — zaznamenává stisky kláves. <b>Adware</b> — vnucuje reklamy.</li>
+            <li><b>Botnet</b> — síť ovládnutých počítačů („zombie").</li>
+            <li><b>Ransomware</b> — zašifruje data a žádá výkupné.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 L2 threats in CZ -->
+  <section class="slide" data-title="H2 — hrozby v ČR" data-optional="true">
+    <div class="wrap"><div class="optional-label">Volitelné · pouze při časové rezervě</div>
+      <div class="eyebrow">Hodina 2 · reálná data</div>
+      <h2>Co antiviry zachytily v ČR tento týden</h2>
+      <div class="cols" style="grid-template-columns:1.1fr .9fr">
+        <div class="block">
+          <a class="demo" href="https://cybermap.kaspersky.com/stats" target="_blank" rel="noopener" style="max-width:none">
+            <img src="images/kaspersky-cz.jpg" alt="Kaspersky statistiky ČR" loading="lazy">
+            <div class="dbody">
+              <span class="dname">Kaspersky Cyberthreat — statistiky ČR <span class="ext">↗</span></span>
+              <span class="durl">cybermap.kaspersky.com/stats</span>
+              <span class="dnote">Žebříček nejčastějších nálezů v Česku za posledních 7 dní. Nejde o teorii z učebnice — je to to, co se právě teď děje.</span>
+            </div>
+          </a>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Co znamenají ty názvy</h3>
+          <div class="names">
+            <div><code>Trojan</code> <span>— trojský kůň</span></div>
+            <div><code>Worm</code> <span>— červ (šíří se sám)</span></div>
+            <div><code>Win32 / BAT / PowerShell</code> <span>— platforma, na které běží</span></div>
+            <div><code>OLE2 · Exploit.MSOffice</code> <span>— útok přes Office dokument a makra</span></div>
+            <div><code>Hosts2</code> <span>— mění soubor hosts → pharming</span></div>
+            <div><code>Miner</code> <span>— skrytě těží kryptoměny</span></div>
+            <div><code>.gen · Generic · ML</code> <span>— detekce podle vzoru / strojového učení</span></div>
+          </div>
+          <p class="kicker" style="margin-top:12px">Čísla ukazují, co antivirus <b>zablokoval</b> — slouží jako trend, ne přesná statistika celé ČR.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 L2 demos -->
+  <section class="slide" data-title="H2 — nástroje">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 2 · vyzkoušejte</div>
+      <h2>Ověřování a náprava</h2>
+      <div class="demos">
+        <a class="demo" href="https://www.eicar.org/download-anti-malware-testfile/" target="_blank" rel="noopener">
+          <img src="images/eicar.jpg" alt="EICAR testovací soubor" loading="lazy">
+          <div class="dbody">
+            <span class="dname">EICAR testovací soubor <span class="ext">↗</span></span>
+            <span class="durl">eicar.org</span>
+            <span class="dnote">Oficiální neškodný testovací „virus". Slouží k ověření, že antivir funguje, aniž byste riskovali nákazu.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://www.virustotal.com" target="_blank" rel="noopener">
+          <img src="images/virustotal.jpg" alt="VirusTotal" loading="lazy">
+          <div class="dbody">
+            <span class="dname">VirusTotal <span class="ext">↗</span></span>
+            <span class="durl">virustotal.com</span>
+            <span class="dnote">Porovná detekce více nástrojů. Nenahrávejte interní soubory ani odkazy s přístupovým tokenem. Nulová detekce není záruka bezpečnosti.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://www.nomoreransom.org" target="_blank" rel="noopener">
+          <img src="images/nomoreransom.jpg" alt="No More Ransom" loading="lazy">
+          <div class="dbody">
+            <span class="dname">No More Ransom <span class="ext">↗</span></span>
+            <span class="durl">nomoreransom.org</span>
+            <span class="dnote">Projekt Europolu s bezplatnými nástroji na odšifrování dat po ransomwaru — bez placení výkupného.</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 DIVIDER 3 -->
+<section class="slide" data-title="Malware na jednom příběhu"><div class="wrap"><div class="eyebrow">12.2.1 · názorné vysvětlení</div><h2>Malware na jednom příběhu</h2><div class="flow"><span>Falešná faktura</span><span>Spuštění přílohy</span><span>Krádež údajů</span><span>Šifrování a vydírání</span></div><div class="lesson-grid"><div class="panel"><h3>Jak se dostane dovnitř</h3><p><b>Malware</b> je škodlivý software. <b>Trojský kůň</b> předstírá užitečný program. <b>Virus</b> se váže na hostitelský soubor, <b>červ</b> se může šířit samostatně.</p><p><b>Makro</b> automatizuje práci v dokumentu, ale může také provádět škodlivé kroky. Kvůli cizí příloze nevypínejte ochranu maker.</p></div><div class="panel"><h3>Co potom dělá</h3><p><b>Spyware</b> sbírá údaje, <b>keylogger</b> zaznamenává klávesy, <b>adware</b> vnucuje reklamu. <b>Rootkit</b> maskuje přítomnost, <b>backdoor</b> nabízí skrytý přístup.</p><p><b>Botnet</b> propojí ovládnutá zařízení. <b>Ransomware</b> vydírá šifrováním či hrozbou zveřejnění. Jeden program může kombinovat více funkcí.</p></div></div></div></section><section class="slide" data-title="Ukázka: kontrola a karanténa"><div class="wrap"><div class="eyebrow">12.2.2–12.2.3 · 5 minut</div><h2>Ukázka: kontrola a karanténa</h2><div class="lesson-grid"><div class="panel"><h3>Na obrazovce lektora</h3><ol><li>Otevřete Zabezpečení Windows → Ochrana před viry a hrozbami.</li><li>Ukažte stav ochrany, aktualizace a možnosti kontroly: rychlá, úplná, vlastní.</li><li>U cvičné složky zvolte kontrolu Microsoft Defenderem; někdy je pod „Zobrazit další možnosti“.</li><li>V Historii ochrany vysvětlete záznam, karanténu a odstranění. Podezřelé soubory neobnovujte jen kvůli ukázce.</li></ol></div><div class="panel"><h3>Co znamenají výsledky</h3><p><b>Signatura:</b> známý vzor škodlivého kódu. <b>Heuristika:</b> vyhodnocení podezřelých vlastností. <b>Detekce chování:</b> sledování činnosti programu.</p><p><b>Zero-day:</b> nově zneužívaná zranitelnost bez dostupné nápravy v daném okamžiku. Antivir není náhradou aktualizací.</p><p>Plán kontroly ukažte v nástroji používaném organizací; u Defenderu může být spravován systémem či IT. Na mobilu respektujte možnosti konkrétního systému.</p></div></div><p class="source">Postup: <a href="https://support.microsoft.com/en-gb/windows/scan-an-item-with-windows-security-d1c8c01d-12ed-e768-cbb8-830ea8ccf8e6" target="_blank" rel="noopener">Microsoft – kontrola souboru</a>. EICAR je volitelná ukázka lektora ve vyhrazeném prostředí; účastníci jej stahovat nemusí.</p></div></section><section class="slide" data-title="Cvičení: zamkněte cvičný dokument"><div class="wrap"><div class="eyebrow">12.1.4 · 15 minut</div><h2>Cvičení: zamkněte cvičný dokument</h2><div class="lesson-grid"><div class="panel"><h3>Postup a kontrola</h3><ol><li>Vytvořte dokument s textem „Cvičný rozpočet 1200 Kč“.</li><li>Desktopový Word: Soubor → Informace → Zamknout dokument → Zašifrovat pomocí hesla. Excel: obdobná ochrana sešitu pro otevření.</li><li>Použijte pouze nové cvičné heslo, uložte a zavřete dokument.</li><li>Zkuste otevření s chybným a poté správným heslem.</li></ol><p><b>Výsledek:</b> obsah se bez správného hesla neotevře. Pouhé omezení úprav tuto ochranu nenahrazuje.</p></div><div class="panel"><h3>Soubor, složka a disk</h3><p><b>Archiv:</b> v dostupném archivátoru vyberte cvičnou složku, vytvořte šifrovaný archiv s heslem a ověřte rozbalení. Pokud je k dispozici, zapněte i šifrování názvů souborů.</p><p><b>Disk:</b> lektor ukáže šifrování zařízení a umístění obnovovacího klíče. Aktivaci na pracovním zařízení řeší IT.</p><p>Šifrovací klíč umožňuje dešifrování; jeho ztráta může znamenat ztrátu dat. Heslo předejte jiným kanálem než soubor. Webový Word tuto funkci nemá.</p></div></div><p class="source"><a href="https://support.microsoft.com/en-us/word/protect-a-word-document-with-a-password" target="_blank" rel="noopener">Microsoft – ochrana dokumentu heslem</a></p></div></section>
+  <section class="slide divider" data-title="Hodina 3">
+    <div class="wrap">
+      <div class="big">03</div>
+      <h2>Sítě a řízení přístupu</h2>
+      <div class="meta">
+        <span class="chip ref">12.3 Bezpečnost sítí</span>
+        <span class="chip ref">12.4 Řízení přístupu</span>
+      </div>
+      <p class="lead" style="margin-top:18px">Typy sítí, Wi-Fi a firewall, přihlašování, biometrie, vícefaktorové ověření a silná hesla.</p>
+    </div>
+  </section>
+
+  <!-- 11 L3 terms -->
+  <section class="slide" data-title="H3 — pojmy">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 3 · pojmy</div>
+      <h2>Sítě, přihlašování, hesla</h2>
+      <div class="cols">
+        <div class="block">
+          <h3><span class="bar"></span>Sítě a Wi-Fi</h3>
+          <ul class="pts">
+            <li><b>Typy sítí</b> <span class="def">— LAN (místní) · WLAN (bezdrátová) · WAN (rozlehlá, internet) · VPN (šifrovaný tunel přes veřejnou síť).</span></li>
+            <li><b>Firewall</b> <span class="def">— filtruje síťovou komunikaci. Neochrání před tím, co uživatel sám spustí nebo povolí.</span></li>
+            <li><b>Zabezpečení Wi-Fi</b> <span class="def">— WPA2 je minimum, WPA3 dnešní standard. Skrytí názvu sítě (SSID) a filtr MAC adres jsou slabá opatření.</span></li>
+            <li><b>Osobní hotspot</b> <span class="def">— sdílení mobilních dat z telefonu; bezpečnější než veřejná Wi-Fi v kavárně.</span></li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Přihlašování a hesla</h3>
+          <ul class="pts">
+            <li><b>Autentizace</b> <span class="def">— heslo · PIN · biometrie (otisk, obličej, duhovka) · MFA (vícefaktorové ověření) · OTP (jednorázový kód z SMS nebo aplikace).</span></li>
+            <li><b>Silné heslo</b> <span class="def">— délka je důležitější než složitost. Passphráze „ZelenýKoníček-skáče-7×!" je silná i snadno zapamatovatelná.</span></li>
+            <li><b>Jiné heslo pro každou službu</b> <span class="def">— aby únik z jednoho webu neohrozil ostatní.</span></li>
+            <li><b>Správce hesel</b> <span class="def">— Bitwarden, KeePass, 1Password. Jedno silné hlavní heslo, zbytek generuje a pamatuje za vás.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 L3 Shodan -->
+  <section class="slide" data-title="H3 — Shodan" data-optional="true">
+    <div class="wrap"><div class="optional-label">Volitelné · pouze při časové rezervě</div>
+      <div class="eyebrow">Hodina 3 · vyhledávač zařízení</div>
+      <h2>Shodan — co je vidět z internetu</h2>
+      <div class="cols" style="grid-template-columns:1fr 1fr">
+        <div class="block">
+          <a class="demo" href="https://www.shodan.io" target="_blank" rel="noopener" style="max-width:none">
+            <img src="images/shodan.jpg" alt="Shodan" loading="lazy">
+            <div class="dbody">
+              <span class="dname">Shodan <span class="ext">↗</span></span>
+              <span class="durl">shodan.io</span>
+              <span class="dnote">Vyhledávač zařízení připojených k internetu. Najde kamery, routery, vzdálené plochy a databáze podle otevřených portů.</span>
+            </div>
+          </a>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Příklady dotazů pro ČR</h3>
+          <div class="queries">
+            <div class="q"><code>port:3389 country:CZ</code><span>vzdálené plochy (RDP)</span></div>
+            <div class="q"><code>port:5900 country:CZ</code><span>VNC; výpis sám neprokazuje slabé heslo</span></div>
+            <div class="q"><code>country:CZ product:"Hikvision"</code><span>kamery</span></div>
+            <div class="q"><code>port:23 country:CZ</code><span>Telnet — zastaralý, nešifrovaný</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note legal"><span class="ic">!</span><div>Ukázka je pouze pro čtení veřejného výpisu. K cizím zařízením se nepřipojujte ani nezkoušejte hesla. Pro testování používejte pouze vlastní prostředí nebo výslovné pověření.</div></div>
+    </div>
+  </section>
+
+  <!-- 13 L3 WiGLE + passwords -->
+  <section class="slide" data-title="H3 — Wi-Fi mapa &amp; hesla" data-optional="true">
+    <div class="wrap"><div class="optional-label">Volitelné · pouze při časové rezervě</div>
+      <div class="eyebrow">Hodina 3 · Wi-Fi a síla hesla</div>
+      <h2>Vaše síť na veřejné mapě</h2>
+      <div class="cols" style="grid-template-columns:1fr 1fr">
+        <div class="block">
+          <a class="demo" href="https://wigle.net" target="_blank" rel="noopener" style="max-width:none">
+            <img src="images/wigle-cz.jpg" alt="WiGLE mapa Wi-Fi sítí" loading="lazy">
+            <div class="dbody">
+              <span class="dname">WiGLE <span class="ext">↗</span></span>
+              <span class="durl">wigle.net</span>
+              <span class="dnote">Veřejná mapa Wi-Fi sítí sesbíraných dobrovolníky. I vaše domácí síť (název i MAC adresa) tu může být — proto název sítě nemá prozrazovat, kdo jste.</span>
+            </div>
+          </a>
+        </div>
+        <div class="block">
+<h3>Proč nelze slíbit „čas prolomení“</h3><p>Záleží na náhodnosti hesla, způsobu uložení, výkonu útočníka i omezení pokusů.</p><div class="flow"><span>Web: omezené pokusy</span><span>Uniklá databáze: útok offline</span></div><p>Dlouhé, ale známé přísloví může být předvídatelné. Používejte jedinečná náhodně generovaná hesla nebo náhodně sestavené fráze.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 DIVIDER 4 -->
+<section class="slide" data-title="Síť od notebooku k internetu"><div class="wrap"><div class="eyebrow">12.3.1–12.3.2</div><h2>Síť od notebooku k internetu</h2><div class="flow"><span>Notebook</span><span>Wi-Fi / WLAN</span><span>Router + firewall</span><span>Internet / WAN</span><span>Server</span></div><div class="lesson-grid"><div class="panel"><h3>Pojmy na schématu</h3><p><b>LAN:</b> místní síť, například kancelář. <b>WLAN:</b> místní bezdrátová síť. <b>WAN:</b> síť propojující vzdálená místa.</p><p><b>SSID:</b> název Wi-Fi sítě. <b>MAC adresa:</b> identifikátor síťového rozhraní; lze jej napodobit a zařízení jej mohou měnit.</p><p><b>WPA/WPA2/WPA3:</b> generace zabezpečení Wi-Fi; původní WPA je zastaralé. Skrytí SSID ani filtr MAC nenahradí šifrování.</p></div><div class="panel"><h3>Co chrání která vrstva</h3><p><b>Firewall:</b> pravidla povolené komunikace. <b>VPN:</b> chráněný tunel k poskytovateli či organizaci; neověří poctivost webu.</p><p><b>HTTPS:</b> chrání komunikaci s konkrétním webem. <b>Hotspot:</b> telefon sdílí své připojení.</p><p>Správce sítě spravuje účty, přístupy, aktualizace a dohled. Sdílená síť může vystavit služby ostatním; volte vhodný síťový profil.</p></div></div></div></section><section class="slide" data-title="Ukázka: firewall a hotspot"><div class="wrap"><div class="eyebrow">12.3.1.5 · 12.3.2.4 · 5 minut</div><h2>Ukázka: firewall a hotspot</h2><div class="lesson-grid"><div class="panel"><h3>Firewall bez vypínání ochrany</h3><ol><li>Zabezpečení Windows → Firewall a ochrana sítě.</li><li>Najděte aktivní profil a stav ochrany. Vysvětlete přepínač zapnutí a vypnutí; ponechte ochranu zapnutou.</li><li>Otevřete povolení aplikace přes firewall. Porovnejte soukromou a veřejnou síť.</li><li>Lektor ukáže modelové povolení a blokování; změny na spravovaném počítači provádí IT.</li></ol></div><div class="panel"><h3>Osobní hotspot</h3><ol><li>Na telefonu najděte Osobní hotspot / Sdílení připojení.</li><li>Zkontrolujte název, ochranu a jedinečné heslo.</li><li>Pokud chcete, připojte vlastní notebook; může čerpat mobilní data.</li><li>Odpojte notebook a hotspot opět vypněte.</li></ol><p>Veřejná Wi-Fi může mít falešného dvojníka. Samotný známý název sítě neověřuje provozovatele.</p></div></div><p class="source"><a href="https://support.microsoft.com/en-us/windows/security/windows-security/firewall-and-network-protection-in-the-windows-security-app" target="_blank" rel="noopener">Microsoft – firewall</a></p></div></section><section class="slide" data-title="Účet není totéž co oprávnění"><div class="wrap"><div class="eyebrow">12.4 · řízení přístupu</div><h2>Účet není totéž co oprávnění</h2><div class="lesson-grid"><div class="panel"><h3>Kdo jste a co smíte</h3><p><b>Účet:</b> vaše identita v systému. <b>Autentizace:</b> prokázání identity. <b>Autorizace:</b> rozhodnutí, k čemu máte přístup.</p><p><b>PIN</b> bývá vázaný na zařízení. <b>Biometrie</b> využívá tělesný znak, například otisk, obličej, duhovku či geometrii ruky; může mít chyby a potřebuje záložní metodu.</p><p>Zamknutí chrání otevřenou relaci, odhlášení ji ukončí. Na sdíleném zařízení se odhlaste i z webových účtů.</p></div><div class="panel"><h3>Vícefaktorové ověření</h3><p>Faktory: něco <b>znám</b> (heslo), něco <b>mám</b> (token/telefon), něco <b>jsem</b> (biometrie).</p><p><b>OTP:</b> jednorázový kód s omezenou platností. Kód nesdělujte volajícímu a neschvalujte nevyžádané přihlášení.</p><p><b>Passkey:</b> přístupový klíč vázaný na službu, obvykle odemykaný zařízením. Způsob obnovy přístupu připravte předem.</p></div></div></div></section><section class="slide" data-title="Cvičení: přihlášení bez slabého článku"><div class="wrap"><div class="eyebrow">Hodina 3 · 15 minut</div><h2>Cvičení: přihlášení bez slabého článku</h2><div class="lesson-grid"><div class="panel"><h3>Návrh pro fiktivní účet</h3><ol><li>Navrhněte jedinečné náhodné heslo nebo frázi z náhodných slov. Nepoužijte žádný příklad z prezentace.</li><li>Popište uložení do správce hesel a ochranu jeho hlavního účtu.</li><li>Vyberte druhý faktor a způsob bezpečného uložení obnovovacích kódů.</li></ol><p>Správce hesel pomáhá s unikátností a vyplňováním, ale potřebuje aktualizace, bezpečné odemčení a plán obnovy.</p><p>Heslo změňte při úniku či podezření a dodržte politiku organizace. Samotné pravidelné změny nenahradí unikátnost.</p></div><div class="panel"><h3>Rozhodněte a zdůvodněte</h3><div class="quiz"><h3>Co jsou dva různé faktory?</h3><button class="answer" aria-pressed="false" data-correct="false">Heslo a bezpečnostní otázka</button><button class="answer" aria-pressed="false" data-correct="true">Heslo a kód z autentizační aplikace</button><button class="answer" aria-pressed="false" data-correct="false">Dvě různá hesla</button><p class="feedback" role="status" hidden data-explanation="Heslo je znalost, aplikace dokládá držení zařízení. Dvě znalosti nejsou dva různé faktory. I OTP lze vylákat phishingem."></p></div><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>U správce chraňte hlavní účet silným unikátním heslem a MFA. Obnovovací kódy uchovávejte odděleně a bezpečně; ne pouze v účtu, který mají obnovit.</p></details></div></div></div></section>
+  <section class="slide divider" data-title="Hodina 4">
+    <div class="wrap">
+      <div class="big">04</div>
+      <h2>Web a komunikace</h2>
+      <div class="meta">
+        <span class="chip ref">12.5 Bezpečný web</span>
+        <span class="chip ref">12.6 Komunikace</span>
+      </div>
+      <p class="lead" style="margin-top:18px">HTTPS a jeho meze, phishing a jeho znaky, sociální sítě, mobilní aplikace a to, kolik o nás prozradí běžné stopy.</p>
+    </div>
+  </section>
+
+  <!-- 15 L4 terms -->
+  <section class="slide" data-title="H4 — pojmy">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 4 · pojmy</div>
+      <h2>Web, phishing, mobil</h2>
+      <div class="cols">
+        <div class="block">
+          <h3><span class="bar"></span>Web a phishing</h3>
+          <ul class="pts">
+            <li><b>HTTPS a zámek</b> <span class="def">— znamená šifrované spojení, NE důvěryhodný web. I phishing má dnes HTTPS.</span></li>
+            <li><b>Pharming</b> <span class="def">— přesměrování na falešný web i při správně napsané adrese (útok na DNS).</span></li>
+            <li><b>Znaky phishingu</b> <span class="def">— naléhavost („do 24 hodin"), oslovení „Vážený zákazníku", odkaz s jinou skutečnou adresou (ukáže se po najetí myší), příloha .exe nebo .zip.</span></li>
+            <li><b>Kam hlásit</b> <span class="def">— zneužité instituci (banka, pošta), vašemu IT, nebo na CSIRT.CZ / Policii ČR.</span></li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Sociální sítě a mobil</h3>
+          <ul class="pts">
+            <li><b>Sociální sítě</b> <span class="def">— nastavit soukromí, nesdílet polohu v reálném čase. Rizika: falešné profily, grooming, podvodné odkazy.</span></li>
+            <li><b>Mobilní aplikace</b> <span class="def">— instalovat jen z oficiálních obchodů, hlídat oprávnění (poloha, kontakty, fotky).</span></li>
+            <li><b>Ztráta telefonu</b> <span class="def">— mít možnost na dálku zařízení najít, zamknout nebo vymazat.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 L4 phishing demos -->
+  <section class="slide" data-title="H4 — phishing nástroje">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 4 · vyzkoušejte</div>
+      <h2>Poznat a prověřit podvod</h2>
+      <div class="demos">
+        <a class="demo" href="https://phishingquiz.withgoogle.com" target="_blank" rel="noopener">
+          <img src="images/phishingquiz.jpg" alt="Google Phishing Quiz" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Google Phishing Quiz <span class="tag cz">česky</span> <span class="ext">↗</span></span>
+            <span class="durl">phishingquiz.withgoogle.com</span>
+            <span class="dnote">Interaktivní test: u osmi e-mailů hádáte, zda jde o phishing, a hned se dozvíte proč.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://dnstwist.it" target="_blank" rel="noopener">
+          <img src="images/dnstwist.jpg" alt="dnstwist" loading="lazy">
+          <div class="dbody">
+            <span class="dname">dnstwist <span class="ext">↗</span></span>
+            <span class="durl">dnstwist.it</span>
+            <span class="dnote">Zadáte doménu a najde podobně vypadající domény zneužitelné k podvodu. U ceskaposta.cz našel 7 registrovaných napodobenin.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://urlscan.io" target="_blank" rel="noopener">
+          <img src="images/urlscan.jpg" alt="urlscan.io" loading="lazy">
+          <div class="dbody">
+            <span class="dname">urlscan.io <span class="ext">↗</span></span>
+            <span class="durl">urlscan.io</span>
+            <span class="dnote">Bezpečně otevře podezřelý odkaz za vás a ukáže snímek stránky, přesměrování a kam odesílá data.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://mxtoolbox.com/EmailHeaders.aspx" target="_blank" rel="noopener">
+          <img src="images/mxtoolbox.jpg" alt="MxToolbox Email Header Analyzer" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Analýza hlavičky e-mailu <span class="ext">↗</span></span>
+            <span class="durl">mxtoolbox.com/EmailHeaders.aspx</span>
+            <span class="dnote">Vložíte hlavičku e-mailu a nástroj ukáže skutečného odesílatele a výsledky kontrol SPF/DKIM.</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 L4 AI stit + privacy -->
+  <section class="slide" data-title="H4 — AI Štít &amp; soukromí">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 4 · česká pomoc &amp; digitální stopy</div>
+      <h2>Když si nejste jistí — a co o vás ví web</h2>
+      <div class="demos">
+        <a class="demo" href="https://stit.bezpecnystat.cz" target="_blank" rel="noopener">
+          <img src="images/aistit.jpg" alt="AI Štít" loading="lazy">
+          <div class="dbody">
+            <span class="dname">AI Štít <span class="tag cz">česky · zdarma</span> <span class="ext">↗</span></span>
+            <span class="durl">stit.bezpecnystat.cz</span>
+            <span class="dnote">U anonymizované modelové zprávy porovnejte doporučení s vlastním rozborem. AI se může mýlit; citlivé údaje nevkládejte.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://jimpl.com" target="_blank" rel="noopener">
+          <img src="images/jimpl.jpg" alt="Jimpl EXIF viewer" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Jimpl — EXIF fotky <span class="ext">↗</span></span>
+            <span class="durl">jimpl.com</span>
+            <span class="dnote">Nahrajete fotku a uvidíte skrytá metadata — včetně GPS souřadnic, pokud je soubor obsahuje. Jejich absence ani přítomnost sama nepotvrzuje pravost.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://coveryourtracks.eff.org" target="_blank" rel="noopener">
+          <img src="images/coveryourtracks.jpg" alt="Cover Your Tracks" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Cover Your Tracks <span class="ext">↗</span></span>
+            <span class="durl">coveryourtracks.eff.org</span>
+            <span class="dnote">Otestuje váš prohlížeč a ukáže, jak snadno vás reklamní systémy rozpoznají i bez cookies (fingerprinting).</span>
+          </div>
+        </a>
+        <a class="demo" href="https://reports.exodus-privacy.eu.org" target="_blank" rel="noopener">
+          <img src="images/exodus.jpg" alt="Exodus Privacy" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Exodus Privacy <span class="ext">↗</span></span>
+            <span class="durl">reports.exodus-privacy.eu.org</span>
+            <span class="dnote">U Android aplikací ukáže, jaké sledovací prvky (trackery) a oprávnění obsahují — i obyčejná baterka nebo hra.</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 18 DIVIDER 5 -->
+<section class="slide" data-title="Klikněte na stopy v podvodném e-mailu"><div class="wrap"><div class="eyebrow">12.6.1 · modelová ukázka offline</div><h2>Klikněte na stopy v podvodném e-mailu</h2><div class="mock"><div class="mock-label">FIKTIVNÍ ZPRÁVA – odkazy nikam nevedou</div><p>Od: <button class="annotate" data-note="Zobrazené jméno lze zvolit libovolně. Porovnejte skutečnou adresu odesílatele a ověřte žádost nezávisle.">IT podpora &lt;podpora@servis.example&gt;</button></p><p>Předmět: <button class="annotate" data-note="Časový tlak má omezit přemýšlení. Skutečná naléhavost se ověřuje známým kontaktem.">Účet bude do 10 minut zrušen!</button></p><p>Obnovte přístup na <button class="annotate" data-note="Rozhodující doména je overeni.example. Text banka.example před ní patří k subdoméně a neprokazuje vlastnictví bankou.">https://banka.example.overeni.example/prihlaseni</button></p><p>Spusťte přílohu <button class="annotate" data-note="Poslední přípona je .exe, tedy program. Ikona ani část názvu .pdf nezaručuje dokument.">Instrukce.pdf.exe</button> a nadiktujte technikovi kód z SMS.</p><p class="feedback" role="status" hidden></p></div><p>Neklikejte podle loga ani jména. Otevřete službu vlastní záložkou a požadavek ověřte jiným kanálem. Adresy .example jsou vyhrazené pro příklady.</p></div></section><section class="slide" data-title="Cvičení: komu patří adresa?"><div class="wrap"><div class="eyebrow">Hodina 4 · část praktického úkolu</div><h2>Cvičení: komu patří adresa?</h2><div class="lesson-grid"><div class="panel"><h3>Čtěte adresu po částech</h3><div class="mock"><code>https://ucet.banka.example/platby</code></div><p><b>https:</b> způsob spojení; <b>ucet:</b> subdoména; <b>banka.example:</b> doména v tomto modelu; <b>/platby:</b> cesta.</p><p>V reálném světě existují i vícedílné veřejné přípony. Neřiďte se jen pravidlem „poslední dvě slova“.</p><p><b>Certifikát</b> váže klíč k identitě/doméně. HTTPS neříká, že je obchod poctivý. <b>Pharming</b> přesměruje provoz manipulací překladu adres.</p></div><div class="panel"><h3>Která adresa patří bance v příkladu?</h3><div class="quiz"><h3>Hledáme doménu banka.example</h3><button class="answer" aria-pressed="false" data-correct="false">https://banka.example.prihlaseni.example</button><button class="answer" aria-pressed="false" data-correct="true">https://prihlaseni.banka.example</button><button class="answer" aria-pressed="false" data-correct="false">https://prihlaseni.example/banka.example</button><p class="feedback" role="status" hidden data-explanation="Ve druhé možnosti je prihlaseni subdoména banky. V první je banka jen část subdomény cizího webu; ve třetí pouze text v cestě."></p></div><p>U e-shopu ověřte adresu, provozovatele, kontakty a nezávislé informace. Jazyk, měna, vzhled a certifikát jsou jen dílčí vodítka.</p></div></div></div></section><section class="slide" data-title="Prohlížeč: co si pamatuje"><div class="wrap"><div class="eyebrow">12.5.1 · názorný postup</div><h2>Prohlížeč: co si pamatuje</h2><div class="lesson-grid"><div class="panel"><h3>Čtyři různé věci</h3><p><b>Historie:</b> seznam navštívených stránek. <b>Cache:</b> dočasně uložené části stránek.</p><p><b>Cookies:</b> drobná data webu, například identifikátor relace či volby; mohou sloužit také sledování.</p><p><b>Automatické vyplňování:</b> nabídka uložených údajů ve formulářích. Uložená hesla tvoří další samostatnou kategorii.</p><p>Anonymní režim omezuje ukládání místní historie; nezajišťuje anonymitu vůči webu či správci sítě.</p></div><div class="panel"><h3>Vyzkoušejte v cvičném profilu</h3><ol><li>V novém odděleném profilu otevřete Nastavení → Soukromí / Vymazat údaje o prohlížení.</li><li>Najděte časový rozsah a jednotlivé kategorie, vysvětlete je.</li><li>Vymažte pouze cvičnou historii a cache. Smazání cookies může odhlásit účty.</li><li>Najděte nastavení ukládání hesel a vyplňování adres; ukažte přepínače.</li></ol><p>Na vlastním profilu nemažte údaje naslepo. Filtr obsahu či rodičovská kontrola omezuje vybrané weby; není zárukou bezpečnosti.</p></div></div></div></section><section class="slide" data-title="Zpráva, podpis a bezpečný hovor"><div class="wrap"><div class="eyebrow">12.6.1 · 12.6.3</div><h2>Zpráva, podpis a bezpečný hovor</h2><div class="lesson-grid"><div class="panel"><h3>Podpis není obrázek podpisu</h3><p><b>Šifrování zprávy:</b> omezuje, kdo si přečte její obsah. <b>Digitální podpis:</b> umožňuje ověřovat původ a změny zprávy podle použitého certifikátu a důvěry v něj.</p><p><b>Digitální certifikát:</b> elektronické potvrzení vazby veřejného klíče na subjekt. Samotný podepsaný e-mail neznamená, že každý jeho požadavek je bezpečný.</p><p>Příklad: zašifrovaný e-mail chrání rozpočet před čtením; podpis pomáhá odhalit změnu částky.</p></div><div class="panel"><h3>Chat a internetové hovory</h3><p><b>VoIP:</b> přenos hlasu přes internet. <b>End-to-end šifrování:</b> obsah je určen koncovým účastníkům, ne automaticky všem prostředníkům.</p><p>Ověřte protistranu a členy skupiny. Nesdílejte hesla ani přihlašovací kódy; neotvírejte nečekané soubory.</p><p>Sdílejte jen potřebné okno, zkontrolujte notifikace a po práci sdílení ukončete. Šifrování neochrání kompromitovaný telefon ani snímek obrazovky příjemce.</p></div></div></div></section><section class="slide" data-title="Cvičení: aplikace a sociální sítě"><div class="wrap"><div class="eyebrow">12.6.2 · 12.6.4 · dokončení 15 minut praxe</div><h2>Cvičení: aplikace a sociální sítě</h2><div class="lesson-grid"><div class="panel"><h3>Co aplikace opravdu potřebuje?</h3><div class="quiz"><h3>Svítilna žádá kontakty a trvalou polohu. Co uděláte?</h3><button class="answer" aria-pressed="false" data-correct="false">Povolím vše, jinak nebude fungovat</button><button class="answer" aria-pressed="false" data-correct="true">Odmítnu nepotřebná oprávnění a zvážím jinou aplikaci</button><button class="answer" aria-pressed="false" data-correct="false">Stačí, že má hezkou ikonu</button><p class="feedback" role="status" hidden data-explanation="Oprávnění mají odpovídat funkci. I aplikace z oficiálního obchodu může sbírat více dat, než potřebujete."></p></div><p>Na vlastním telefonu dobrovolně najděte přehled oprávnění. Prověřte polohu, mikrofon, kontakty a fotografie. Nastavení nemusíte měnit.</p></div><div class="panel"><h3>Soukromí a ztracený telefon</h3><p>U modelového profilu rozhodněte, kdo smí vidět příspěvky a polohu. <b>Kyberšikana</b> je ubližování pomocí digitálních prostředků; <b>grooming</b> je manipulativní navazování důvěry za účelem zneužití.</p><p>Uchovejte důkazy, využijte blokování a hlášení, vyhledejte pomoc podle situace. Dezinformaci nešiřte před ověřením.</p><p>Při ztrátě použijte oficiální službu lokalizace a zamknutí, kontaktujte IT a operátora. Vzdálené smazání je nevratný krok a závisí na připojení a nastavení zařízení.</p></div></div></div></section>
+  <section class="slide divider" data-title="Hodina 5">
+    <div class="wrap">
+      <div class="big">05</div>
+      <h2>Správa dat a AI hrozby</h2>
+      <div class="meta">
+        <span class="chip ref">12.7 Bezpečná správa dat</span>
+        <span class="chip ref">12.8 AI a deepfake</span>
+      </div>
+      <p class="lead" style="margin-top:18px">Zálohování podle pravidla 3-2-1, rozdíl mezi smazáním a trvalým odstraněním, deepfake a podvody se syntetickým hlasem.</p>
+    </div>
+  </section>
+
+  <!-- 19 L5 terms -->
+  <section class="slide" data-title="H5 — pojmy">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 5 · pojmy</div>
+      <h2>Zálohy, mazání, deepfake</h2>
+      <div class="cols">
+        <div class="block">
+          <h3><span class="bar"></span>Data a zálohy</h3>
+          <ul class="pts">
+            <li><b>Pravidlo 3-2-1</b> <span class="def">— 3 kopie dat, 2 různá média, 1 mimo pracoviště; navíc udržujte offline nebo neměnnou kopii. Offline kopie je nejlepší obrana proti ransomwaru.</span></li>
+            <li><b>Synchronizace není záloha</b> <span class="def">— smazaný nebo zašifrovaný soubor se v OneDrivu/cloudu smaže taky. Pomáhá historie verzí a koš.</span></li>
+            <li><b>Smazání ≠ trvalé odstranění</b> <span class="def">— smazaný soubor jde často obnovit. U HDD lze použít ověřené přepsání; u SSD vhodný příkaz sanitizace či bezpečné kryptografické vymazání. Postup závisí na zařízení, pro vyřazení využijte IT.</span></li>
+          </ul>
+        </div>
+        <div class="block">
+          <h3><span class="bar"></span>Deepfake a syntetický hlas</h3>
+          <ul class="pts">
+            <li><b>Deepfake</b> <span class="def">— falešné obrázky a videa vytvořené AI. Možné stopy: nesrovnalosti geometrie, textur, mrkání nebo pohybu rtů. Jejich nepřítomnost pravost nepotvrzuje; ověřujte zdroj a kontext.</span></li>
+            <li><b>Syntetický hlas</b> <span class="def">— napodobuje hlas; podobnost hlasu sama nepotvrzuje totožnost volajícího.</span></li>
+            <li><b>Obrana</b> <span class="def">— u neočekávané žádosti o peníze zavolejte zpět na známé číslo a domluvte si rodinné nebo firemní heslo.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20 L5 demos -->
+  <section class="slide" data-title="H5 — ukázky">
+    <div class="wrap">
+      <div class="eyebrow">Hodina 5 · vyzkoušejte</div>
+      <h2>Poznáte, co je skutečné?</h2>
+      <div class="demos">
+        <a class="demo" href="https://www.whichfaceisreal.com" target="_blank" rel="noopener">
+          <img src="images/whichfaceisreal.jpg" alt="Which Face Is Real" loading="lazy">
+          <div class="dbody">
+            <span class="dname">Which Face Is Real <span class="ext">↗</span></span>
+            <span class="durl">whichfaceisreal.com</span>
+            <span class="dnote">Ukáže dvě tváře — jednu skutečnou a jednu vygenerovanou AI. Vaším úkolem je poznat tu pravou.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://thispersondoesnotexist.com" target="_blank" rel="noopener">
+          <img src="images/thispersondoesnotexist.jpg" alt="This Person Does Not Exist" loading="lazy">
+          <div class="dbody">
+            <span class="dname">This Person Does Not Exist <span class="ext">↗</span></span>
+            <span class="durl">thispersondoesnotexist.com</span>
+            <span class="dnote">Při každém načtení vygeneruje novou tvář člověka, který neexistuje. Takto vznikají fotky falešných profilů.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://lens.google.com" target="_blank" rel="noopener">
+          <div class="thumb">Zpětné hledání obrázku</div>
+          <div class="dbody">
+            <span class="dname">Google Lens <span class="ext">↗</span></span>
+            <span class="durl">lens.google.com</span>
+            <span class="dnote">Zpětné vyhledávání obrázku — zjistíte, odkud fotka pochází a zda se už někde objevila. Alternativa: tineye.com</span>
+          </div>
+        </a>
+        <a class="demo" href="https://stit.bezpecnystat.cz" target="_blank" rel="noopener">
+          <img src="images/aistit.jpg" alt="AI Štít" loading="lazy">
+          <div class="dbody">
+            <span class="dname">AI Štít <span class="tag cz">česky</span> <span class="ext">↗</span></span>
+            <span class="durl">stit.bezpecnystat.cz</span>
+            <span class="dnote">Nevíte, jestli je zpráva nebo výzva k platbě pravá? Pošlete ji a AI vám poradí.</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 21 Czech tools -->
+<section class="slide" data-title="Záloha má cenu, když ji obnovíte"><div class="wrap"><div class="eyebrow">12.7.1 · ukázka 5 minut</div><h2>Záloha má cenu, když ji obnovíte</h2><div class="flow"><span>Pracovní soubor</span><span>Samostatná záloha</span><span>Ztráta pracovní kopie</span><span>Obnova a ověření</span></div><div class="lesson-grid"><div class="panel"><h3>Plán zálohování</h3><p><b>3-2-1:</b> tři kopie včetně originálu, dvě různé technologie/média, jedna kopie mimo místo práce. Offline či neměnná kopie zvyšuje odolnost.</p><p><b>NAS:</b> síťové úložiště. USB, externí disk, NAS i cloud mohou být cílem zálohy; samotné další úložiště ještě není plán.</p><p>Stanovte co, jak často, kam, na jak dlouho, kdo a jak ověří obnovu. <b>Komprese</b> zmenší data; není to šifrování.</p></div><div class="panel"><h3>Rozdíl na příkladu</h3><p><b>Synchronizace:</b> změnu či smazání může přenést i do dalších zařízení.</p><p><b>Záloha:</b> uchovává obnovitelnou kopii či starší stav podle nastavených pravidel.</p><p><b>Verzování:</b> historie změn; ověřte délku uchování a možnosti obnovy. Cloud může mít zálohovací funkce, ale je nutné je skutečně nastavit a vyzkoušet.</p></div></div></div></section><section class="slide" data-title="Cvičení: soubor zmizel. Obnovte ho."><div class="wrap"><div class="eyebrow">12.7.1.4–12.7.1.5 · 8 minut</div><h2>Cvičení: soubor zmizel. Obnovte ho.</h2><div class="lesson-grid"><div class="panel"><h3>Pracujte jen s cvičnou kopií</h3><ol><li><a href="exercises/obnova.txt" download>Stáhněte cvičný soubor</a> do složky Prace.</li><li>Zkopírujte ho do složky Zaloha, ideálně na jiné dostupné úložiště.</li><li>V Prace změňte obsah a pak tuto pracovní kopii smažte.</li><li>Ze Zaloha obnovte soubor do nové složky Obnoveno.</li><li>Otevřete ho a ověřte původní text i kontrolní kód.</li></ol><p>Dvě složky na jednom disku slouží pouze pro nácvik; nechrání proti poruše disku.</p></div><div class="panel"><h3>Jak poznáte úspěch?</h3><p>Obnovený soubor je čitelný, má původní obsah a kód. Původní záložní kopie stále existuje.</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Kontrolní kód: ZALOHA-321. Obnova má proběhnout ze samostatné kopie, nikoli pouze z koše. Pro skutečný plán přidejte jiné médium, kopii mimo místo práce a pravidelný test.</p></details><p>Ve dvojici navrhněte zálohování rodinných fotografií: jaké kopie, četnost a kdo bude obnovu kontrolovat?</p></div></div></div></section><section class="slide" data-title="Mazání, vyřazení a fyzická ochrana"><div class="wrap"><div class="eyebrow">12.7.1.1 · 12.7.2</div><h2>Mazání, vyřazení a fyzická ochrana</h2><div class="lesson-grid"><div class="panel"><h3>Smazat není vždy odstranit</h3><p>Koš umožňuje obnovu. Ani jeho vyprázdnění samo nezaručí odstranění všech dat z média.</p><p>HDD, SSD, telefon a cloud vyžadují odlišné postupy. U SSD nelze spoléhat na běžné přepsání jednotlivého souboru.</p><p>Cloudové kopie, zálohy a sdílení mohou přetrvat smazání. Před prodejem zařízení využijte postup výrobce nebo IT, ověřte zálohu i výsledek sanitizace.</p></div><div class="panel"><h3>Než odejdete od stolu</h3><p>Zamkněte obrazovku, nenechávejte zařízení bez dozoru, omezte fyzický přístup a podle prostředí využijte kabelový zámek či zabezpečenou místnost.</p><p>Šifrování pomáhá při odcizení uzamčeného zařízení; záloha pomáhá při jeho ztrátě. Jde o dvě různé potřeby.</p><p><b>Miniúkol:</b> proč nestačí před prodejem notebooku smazat složku Dokumenty?</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Mohou zůstat obnovitelná data, jiné účty, cache, uložené přístupy i další kopie. Je nutné řešit celé zařízení a postup odpovídající jeho úložišti.</p></details></div></div></div></section><section class="slide" data-title="Cvičení: hlas znám, žádost ověřím"><div class="wrap"><div class="eyebrow">12.8 · 4 minuty</div><h2>Cvičení: hlas znám, žádost ověřím</h2><div class="lesson-grid"><div class="panel"><h3>Modelový telefonát</h3><div class="mock"><div class="mock-label">SCÉNÁŘ PRO DVOJICI</div>„Ahoj, tady šéf. Jsem na jednání, pošli hned platbu na nový účet. Nikomu nevolej.“</div><p>Jeden čte scénář, druhý reaguje. Navrhněte ověřovací postup, který nezávisí na tom, zda hlas zní přirozeně.</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Pozastavit platbu, hovor ukončit, zavolat na dříve známý kontakt a dodržet schvalování plateb. Doplňkově použít předem domluvené ověření; veřejně zjistitelná osobní fakta nestačí.</p></details></div><div class="panel"><h3>Obrázek a video ověřujte obdobně</h3><ol><li>Najděte původní zdroj a datum.</li><li>Vyhledejte snímek zpětně, porovnejte kontext.</li><li>Prohlédněte metadata cvičného souboru, pokud existují.</li><li>Hledejte nezávislé potvrzení.</li></ol><p>Neobvyklý rytmus hlasu, textura, geometrie a rty mohou vzbudit podezření; jejich absence pravost nedokazuje. Ani AI detektor není konečný důkaz.</p></div></div></div></section><section class="slide" data-title="Co uděláte v prvních minutách?"><div class="wrap"><div class="eyebrow">Praktické reakce · 3 minuty</div><h2>Co uděláte v prvních minutách?</h2><div class="lesson-grid"><div class="panel"><h3>Zadal jsem heslo na cizím webu</h3><p>Otevřete skutečnou službu známou cestou. Z důvěryhodného zařízení změňte heslo, ukončete jiné relace a prověřte MFA a obnovovací údaje. Změňte i stejné heslo použité jinde.</p><p>U pracovního účtu ihned kontaktujte IT. Při vyzrazení platebních údajů kontaktujte banku jejím oficiálním kanálem.</p></div><div class="panel"><h3>Spustil jsem podezřelou přílohu</h3><p>Přestaňte na zařízení pracovat, odpojte jej od sítě a kontaktujte IT jiným zařízením. Řiďte se pokyny; nemažte důkazy ani bez rozmyslu nepřipojujte záložní disk.</p><p>Poznamenejte čas, soubor a provedené kroky. Samotné zavření okna nevrací situaci do bezpečného stavu.</p></div></div></div></section><section class="slide" data-title="Závěrečný kvíz: vysvětlete své rozhodnutí"><div class="wrap"><div class="eyebrow">5 minut · společné vyhodnocení</div><h2>Závěrečný kvíz: vysvětlete své rozhodnutí</h2><div class="lesson-grid"><div class="panel"><h3>Web a příloha</h3><div class="quiz"><h3>Web má HTTPS. Co víte?</h3><button class="answer" aria-pressed="false" data-correct="false">Je určitě poctivý</button><button class="answer" aria-pressed="false" data-correct="true">Spojení je chráněné; poctivost tím není zaručena</button><p class="feedback" role="status" hidden data-explanation="HTTPS chrání přenos a ověřuje spojení podle certifikátu. I podvodný web může mít platný certifikát."></p></div><div class="quiz"><h3>Antivir nic nenašel. Mohu spustit nečekanou přílohu?</h3><button class="answer" aria-pressed="false" data-correct="false">Ano, výsledek je záruka</button><button class="answer" aria-pressed="false" data-correct="true">Nejdřív nezávisle ověřím původ a účel</button><p class="feedback" role="status" hidden data-explanation="Nulová detekce nezaručuje bezpečnost. Ověřte neočekávanou žádost známým kontaktem."></p></div></div><div class="panel"><h3>Data a identita</h3><div class="quiz"><h3>Co ověří použitelnost zálohy?</h3><button class="answer" aria-pressed="false" data-correct="true">Úspěšná zkušební obnova</button><button class="answer" aria-pressed="false" data-correct="false">Ikona cloudu</button><p class="feedback" role="status" hidden data-explanation="Zkušební obnova ověří dostupnost a čitelnost konkrétních dat; sama ikona nic takového nedokládá."></p></div><div class="quiz"><h3>Volající zní přesně jako kolega a chce kód. Co dál?</h3><button class="answer" aria-pressed="false" data-correct="false">Sdělím jej</button><button class="answer" aria-pressed="false" data-correct="true">Odmítnu a ověřím požadavek známým kanálem</button><p class="feedback" role="status" hidden data-explanation="Podoba hlasu není důkaz identity. Přihlašovací kódy nesdělujte druhým."></p></div></div></div></div></section>
+  <section class="slide" data-title="České nástroje" data-optional="true">
+    <div class="wrap"><div class="optional-label">Volitelné · pouze při časové rezervě</div>
+      <div class="eyebrow">České řešení</div>
+      <h2>Bezpečnost od nás — BezpečnýStát.cz</h2>
+      <div class="demos d2">
+        <a class="demo" href="https://bezpecnystat.cz" target="_blank" rel="noopener">
+          <img src="images/bezpecnystat.jpg" alt="BezpečnýStát.cz" loading="lazy">
+          <div class="dbody">
+            <span class="dname">BezpečnýStát.cz <span class="tag cz">zdarma</span> <span class="ext">↗</span></span>
+            <span class="durl">bezpecnystat.cz</span>
+            <span class="dnote">Český systém pro okamžitou aktivaci poplachů a krizovou komunikaci institucí. Nasazený ve 35 okresech, chrání 13 000+ dětí a zaměstnanců. Pro školy a instituce zdarma.</span>
+          </div>
+        </a>
+        <a class="demo" href="https://stit.bezpecnystat.cz" target="_blank" rel="noopener">
+          <img src="images/aistit.jpg" alt="AI Štít" loading="lazy">
+          <div class="dbody">
+            <span class="dname">AI Štít <span class="tag cz">zdarma</span> <span class="ext">↗</span></span>
+            <span class="durl">stit.bezpecnystat.cz</span>
+            <span class="dnote">Bezplatná služba BezpečnýStátu: pošlete podezřelou zprávu, screenshot nebo odkaz a AI posoudí, zda jde o podvod, a poradí, co dělat.</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 22 CLOSING -->
+<section class="slide" data-title="Slovníček 1"><div class="wrap"><div class="eyebrow">Referenční příloha · mimo 225 minut</div><h2>Slovníček 1</h2><dl class="glossary-list"><div><dt>Data / informace</dt><dd>Fakta / fakta doplněná významem a kontextem.</dd></div><div><dt>Důvěrnost / integrita / dostupnost</dt><dd>Přístup jen oprávněným / ochrana před nepozorovanou změnou / data k dispozici, když jsou potřeba.</dd></div><div><dt>Subjekt / správce / zpracovatel</dt><dd>Člověk, jehož údaje se týkají / určuje účel a způsob zpracování / zpracovává údaje pro správce.</dd></div><div><dt>Phishing / vishing / pretexting</dt><dd>Podvodná zpráva či web / manipulace hlasem / vymyšlená záminka pro získání důvěry.</dd></div><div><dt>Shoulder surfing / information diving / skimming</dt><dd>Odezírání obrazovky / získávání údajů z odhozených nosičů / snímání údajů karty či přístupových údajů technickým prostředkem.</dd></div><div><dt>Malware / virus / červ</dt><dd>Škodlivý software / nákaza vázaná na hostitelský soubor / samostatně se šířící program.</dd></div><div><dt>Trojan / rootkit / backdoor</dt><dd>Předstírá užitečnost / maskuje přítomnost / skrytý vstup do systému.</dd></div><div><dt>Spyware / keylogger / adware</dt><dd>Špehování / záznam kláves / nežádoucí reklama.</dd></div><div><dt>Botnet / ransomware</dt><dd>Síť ovládnutých zařízení / vydírání blokací či zveřejněním dat.</dd></div></dl></div></section><section class="slide" data-title="Slovníček 2"><div class="wrap"><div class="eyebrow">Referenční příloha · mimo 225 minut</div><h2>Slovníček 2</h2><dl class="glossary-list"><div><dt>Antivir / karanténa</dt><dd>Detekce a řešení škodlivého softwaru / oddělení podezřelého souboru.</dd></div><div><dt>Signatura / heuristika / zero-day</dt><dd>Známý vzor / odhad podle vlastností / nově zneužívaná zranitelnost bez dostupné nápravy v daném okamžiku.</dd></div><div><dt>Makro / šifrování / klíč</dt><dd>Automatizace v dokumentu / převod obsahu do chráněné podoby / údaj umožňující šifrování či dešifrování.</dd></div><div><dt>LAN / WLAN / WAN</dt><dd>Místní síť / bezdrátová místní síť / síť propojující vzdálená místa.</dd></div><div><dt>VPN / firewall / hotspot</dt><dd>Chráněný tunel / filtr komunikace / sdílení internetového připojení.</dd></div><div><dt>SSID / MAC / WPA</dt><dd>Název Wi-Fi / identifikátor rozhraní / rodina technologií zabezpečení Wi-Fi.</dd></div><div><dt>Účet / autentizace / autorizace</dt><dd>Identita v systému / ověření identity / určení povolených činností.</dd></div><div><dt>PIN / biometrie / MFA / OTP</dt><dd>Osobní číselný kód / tělesný znak / různé faktory ověření / jednorázové heslo či kód.</dd></div><div><dt>Passphrase / správce hesel / passkey</dt><dd>Heslová fráze / nástroj na správu přihlašovacích údajů / přístupový klíč vázaný na službu.</dd></div></dl></div></section><section class="slide" data-title="Slovníček 3"><div class="wrap"><div class="eyebrow">Referenční příloha · mimo 225 minut</div><h2>Slovníček 3</h2><dl class="glossary-list"><div><dt>URL / doména / HTTPS / certifikát</dt><dd>Adresa zdroje / jméno v systému adres / chráněné webové spojení / potvrzení vazby klíče k identitě.</dd></div><div><dt>Pharming / cache / cookies</dt><dd>Podvržené směrování k webu / dočasné kopie / data webu pro relace, volby či sledování.</dd></div><div><dt>Digitální podpis / end-to-end / VoIP</dt><dd>Ověřování původu a integrity / šifrování mezi koncovými účastníky / hlas přenášený internetem.</dd></div><div><dt>Kyberšikana / grooming / oprávnění aplikace</dt><dd>Digitální ubližování / manipulativní navazování důvěry za účelem zneužití / povolený přístup k funkcím či datům.</dd></div><div><dt>Záloha / synchronizace / NAS / komprese</dt><dd>Obnovitelná kopie / přenos změn / síťové úložiště / zmenšení dat.</dd></div><div><dt>Deepfake / syntetický hlas / metadata</dt><dd>Uměle vytvořené či upravené obrazové médium / generovaná řeč / doprovodné údaje o souboru.</dd></div><div><dt>HDD / SSD / sanitizace</dt><dd>Magnetický disk / polovodičové úložiště / řízené odstranění dat odpovídající médiu.</dd></div></dl></div></section><section class="slide" data-title="Zdroje a návaznost na sylabus"><div class="wrap"><div class="eyebrow">Referenční příloha</div><h2>Zdroje a návaznost na sylabus</h2><div class="panel"><p>Výklad je vlastní zpracování podle ECDL / ICDL M12, sylabus 2.1, česká lokalizace 1.2 z 6. 3. 2025. Kódy na slajdech označují související oblasti. Pět hodin je úvodní průchod s nácvikem, nikoli záruka zvládnutí všech zkouškových úloh.</p><ul><li><a href="https://www.ecdl.cz/" target="_blank" rel="noopener">ECDL CZ – informace k modulu a sylabům</a></li><li><a href="https://pages.nist.gov/800-63-4/sp800-63b.html" target="_blank" rel="noopener">NIST SP 800-63B-4 – hesla a autentizace</a></li><li><a href="https://support.microsoft.com/en-us/word/protect-a-word-document-with-a-password" target="_blank" rel="noopener">Microsoft – šifrování dokumentu heslem</a></li><li><a href="https://www.cisa.gov/sites/default/files/publications/tactics-of-disinformation_508.pdf" target="_blank" rel="noopener">CISA – ověřování manipulovaného obsahu</a></li></ul><p>Náhledy externích služeb jsou ilustrativní, mohou se lišit od aktuálního webu. Služby mohou vyžadovat účet, změnit podmínky nebo být nedostupné. Offline varianty hlavních cvičení jsou součástí prezentace.</p></div></div></section>
+  <section class="slide" data-title="Desatero">
+    <div class="wrap">
+      <div class="eyebrow">Shrnutí</div>
+      <h2>Desatero bezpečného uživatele</h2>
+      <ol class="ten">
+        <li><span class="n">1</span><span>Dlouhé passphráze, jiné pro každou službu, správce hesel.</span></li>
+        <li><span class="n">2</span><span>Zapněte vícefaktorové ověření, kde to jde.</span></li>
+        <li><span class="n">3</span><span>Aktualizujte systém, prohlížeč i antivir.</span></li>
+        <li><span class="n">4</span><span>Před kliknutím ověřte odesílatele a skutečnou adresu odkazu.</span></li>
+        <li><span class="n">5</span><span>HTTPS je nutnost, ne záruka důvěryhodnosti.</span></li>
+        <li><span class="n">6</span><span>Zálohujte podle 3-2-1, jednu kopii offline.</span></li>
+        <li><span class="n">7</span><span>Ověřte síť, používejte HTTPS; pro citlivou práci zvažte vlastní hotspot nebo důvěryhodnou VPN.</span></li>
+        <li><span class="n">8</span><span>Nesdílejte polohu a osobní údaje v reálném čase.</span></li>
+        <li><span class="n">9</span><span>U neočekávané žádosti o peníze zavolejte zpět na známé číslo.</span></li>
+        <li><span class="n">10</span><span>Při problému kontaktujte IT; AI odpovědi ověřujte a nesdílejte citlivá data.</span></li>
+      </ol>
+      <p class="foot">ECDL / ICDL Sylabus 2.1 · Modul 12 · 5 vyučovacích hodin</p>
+    </div>
+  </section>
+
+</div>
+
+<div id="bar">
+  <span class="title-min" id="tmin"></span>
+  <button id="prev" aria-label="Předchozí">‹ Zpět</button>
+  <span class="count" id="count">1 / 47</span>
+  <button id="next" aria-label="Další">Dál ›</button>
+  <button id="menuBtn" aria-label="Osnova">☰ Osnova</button>
+</div>
+
+<div id="menu" role="dialog" aria-modal="true" aria-label="Osnova prezentace" aria-hidden="true">
+  <button id="closeMenu">Zavřít ✕</button>
+  <div class="mwrap">
+    <h3>Osnova</h3>
+    <div class="menu-tools"><button id="glossaryBtn">Slovníček pojmů</button></div><ol id="menuList"></ol>
+  </div>
+</div>
+
+<script>
+(function(){
+  var slides=Array.from(document.querySelectorAll('.slide')),i=0;
+  var menu=document.getElementById('menu'),list=document.getElementById('menuList'),lastFocus=null;
+  var prev=document.getElementById('prev'),next=document.getElementById('next');
+  function render(){
+    slides.forEach(function(s,n){s.classList.toggle('is-active',n===i);});
+    document.getElementById('count').textContent=(i+1)+' / '+slides.length;
+    document.querySelector('#rail>span').style.width=(slides.length>1?i/(slides.length-1)*100:100)+'%';
+    document.getElementById('tmin').textContent=slides[i].dataset.title;
+    list.querySelectorAll('li').forEach(function(li,n){li.classList.toggle('cur',n===i);li.firstChild.setAttribute('aria-current',n===i?'step':'false');});
+    prev.disabled=i===0;next.disabled=i===slides.length-1;
+    window.scrollTo(0,0);
+  }
+  function go(n){i=Math.max(0,Math.min(slides.length-1,n));render();}
+  slides.forEach(function(s,n){var li=document.createElement('li'),b=document.createElement('button');b.type='button';b.textContent=(n+1)+'. '+s.dataset.title+(s.dataset.optional?' · volitelné':'');b.onclick=function(){go(n);closeMenu();};li.appendChild(b);list.appendChild(li);});
+  function openMenu(){lastFocus=document.activeElement;menu.classList.add('open');menu.setAttribute('aria-hidden','false');document.getElementById('stage').inert=true;document.getElementById('bar').inert=true;document.body.style.overflow='hidden';document.getElementById('closeMenu').focus();}
+  function closeMenu(){menu.classList.remove('open');menu.setAttribute('aria-hidden','true');document.getElementById('stage').inert=false;document.getElementById('bar').inert=false;document.body.style.overflow='';if(lastFocus)lastFocus.focus();}
+  next.onclick=function(){go(i+1);};prev.onclick=function(){go(i-1);};
+  document.getElementById('menuBtn').onclick=openMenu;document.getElementById('closeMenu').onclick=closeMenu;
+  document.getElementById('glossaryBtn').onclick=function(){go(slides.findIndex(function(s){return s.dataset.title==='Slovníček 1';}));closeMenu();};
+  menu.onclick=function(e){if(e.target===menu)closeMenu();};
+  document.addEventListener('keydown',function(e){
+    if(menu.classList.contains('open')){
+      if(e.key==='Escape'){e.preventDefault();closeMenu();}
+      if(e.key==='Tab'){var f=Array.from(menu.querySelectorAll('button')),a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}return;
+    }
+    if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+    if((e.key===' '||e.key==='Enter')&&e.target.closest('button,a,summary'))return;
+    switch(e.key){case 'ArrowRight':case 'PageDown':case ' ':e.preventDefault();go(i+1);break;case 'ArrowLeft':case 'PageUp':e.preventDefault();go(i-1);break;case 'Home':e.preventDefault();go(0);break;case 'End':e.preventDefault();go(slides.length-1);break;case 'o':case 'O':openMenu();break;}
+  });
+  var start=null;
+  document.addEventListener('touchstart',function(e){start=null;if(!menu.classList.contains('open')&&e.touches.length===1&&!e.target.closest('button,a,summary,input,textarea'))start={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  document.addEventListener('touchcancel',function(){start=null;},{passive:true});
+  document.addEventListener('touchend',function(e){if(!start||menu.classList.contains('open'))return;var dx=e.changedTouches[0].clientX-start.x,dy=e.changedTouches[0].clientY-start.y;start=null;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)go(i+(dx<0?1:-1));},{passive:true});
+  document.querySelectorAll('.answer').forEach(function(b){b.onclick=function(){var q=b.closest('.quiz');q.querySelectorAll('.answer').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});var f=q.querySelector('.feedback');f.hidden=false;f.textContent=(b.dataset.correct==='true'?'Správně. ':'Zkuste své rozhodnutí přehodnotit. ')+f.dataset.explanation;};});
+  document.querySelectorAll('.annotate').forEach(function(b){b.setAttribute('aria-expanded','false');b.onclick=function(){var box=b.closest('.mock');box.querySelectorAll('.annotate').forEach(function(x){x.setAttribute('aria-expanded',String(x===b));});var f=box.querySelector('.feedback');f.hidden=false;f.textContent=b.dataset.note;};});
+  render();
+})();
+</script>
+</body>
+</html>
+

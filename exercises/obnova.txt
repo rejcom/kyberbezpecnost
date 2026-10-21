@@ -1,0 +1,7 @@
+CVICNY SOUBOR - zadne osobni udaje
+Zakazka: SKOLENI-2026
+Pocet ucastniku: 12
+Kontrolni kod pro overeni obnovy: ZALOHA-321
+
+Ukol: vytvorte zalohu mimo pracovni slozku, zmente pracovni kopii,
+obnovte puvodni soubor do nove slozky a overte kontrolni kod.
