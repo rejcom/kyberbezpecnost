@@ -20,3 +20,5 @@ Obnovení stránky vrací prezentaci na začátek. Tisk vynechává volitelné u
 ## Nasazení
 Nahrajte index.html, images/ a exercises/ na statický hosting nebo GitHub Pages.
 V GitHub Settings → Pages vyberte příslušnou větev a kořenovou složku.
+
+Zobrazení využívá celou plochu okna a přizpůsobuje velikost textu každému slajdu. Tlačítko Celá obrazovka nebo F zapne režim bez lišt prohlížeče; Escape jej ukončí. Na malých obrazovkách a u delšího rozbaleného obsahu lze posouvat slajd.

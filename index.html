@@ -193,6 +193,30 @@
   #menu li{display:block;padding:0}#menu li button{width:100%;display:flex;gap:14px;background:transparent;color:var(--fg);border:0;padding:10px;text-align:left;font:inherit;cursor:pointer}#menu .menu-tools{margin-bottom:16px}#menu .menu-tools button{padding:10px;font:inherit;cursor:pointer}#bar button:disabled{opacity:.4;cursor:default}
   @media(max-width:760px){.lesson-grid,.glossary-list{grid-template-columns:1fr}.panel,.mock{padding:16px}#bar{gap:5px;padding-left:8px;padding-right:8px}#bar .title-min{display:none}#bar button{padding:10px 8px}#bar .count{margin-right:auto}.slide{padding-left:18px;padding-right:18px}}
   @media print{#bar,#rail,#menu{display:none!important}.slide,.slide.is-active{display:block!important;min-height:0;break-after:page;padding:24px;animation:none}.slide[data-optional]{display:none!important}details>*{display:block!important}.lesson-grid{grid-template-columns:1fr 1fr}body{background:white;color:black}}
+
+  /* Use the actual viewport, with per-slide text sizing for projection. */
+  @media screen {
+    html{font-size:20px}body{overflow:hidden}
+    #stage{height:100dvh;min-height:0}
+    .slide{height:100dvh;min-height:0;flex:none;justify-content:flex-start;overflow-y:auto;
+      padding:max(20px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) calc(var(--bar-height,60px) + 20px) max(24px,env(safe-area-inset-left))}
+    .slide .wrap{max-width:none;width:100%;margin:auto 0;flex-shrink:0}
+    .title h1{font-size:clamp(2.5rem,6vw,5rem)}
+    .lesson-grid,.cols{gap:clamp(18px,2vw,40px)}
+    .demos{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
+    a.demo img,a.demo .thumb{max-height:30dvh;object-fit:contain}
+    .lesson-grid a.demo img{max-height:28dvh}
+    .panel{padding:clamp(16px,1.5vw,28px)}
+    #bar{font-size:16px}#bar button{font-size:14px}#bar .count{font-size:13px}#bar .title-min{font-size:14px}
+    #menu{font-size:18px}#menu .mwrap{max-width:1000px}
+    #fullscreenStatus{position:fixed;right:20px;bottom:calc(var(--bar-height,60px) + 12px);z-index:60;background:var(--panel);padding:12px;border:1px solid var(--line);border-radius:10px;max-width:90vw;font-size:16px}
+  }
+  @media screen and (max-width:760px){
+    html{font-size:17px}.slide{padding-left:16px;padding-right:16px}
+    .slide .wrap{margin:0}.lesson-grid,.cols{grid-template-columns:1fr}
+    #bar{flex-wrap:wrap}#fullscreenBtn{font-size:12px;padding:9px 6px}
+    .title h1{font-size:clamp(2rem,9vw,3.5rem)}
+  }
 </style>
 </head>
 <body>
@@ -797,8 +821,10 @@
   <span class="count" id="count">1 / 51</span>
   <button id="next" aria-label="Další">Dál ›</button>
   <button id="menuBtn" aria-label="Osnova">☰ Osnova</button>
+  <button id="fullscreenBtn" aria-label="Celá obrazovka" aria-pressed="false" title="Celá obrazovka (F)">⛶ Celá obrazovka</button>
 </div>
 
+<p id="fullscreenStatus" role="status" hidden></p>
 <div id="menu" role="dialog" aria-modal="true" aria-label="Osnova prezentace" aria-hidden="true">
   <button id="closeMenu">Zavřít ✕</button>
   <div class="mwrap">
@@ -812,6 +838,32 @@
   var slides=Array.from(document.querySelectorAll('.slide')),i=0;
   var menu=document.getElementById('menu'),list=document.getElementById('menuList'),lastFocus=null;
   var prev=document.getElementById('prev'),next=document.getElementById('next');
+  var fitFrame=0;
+  function fitSlide(){
+    cancelAnimationFrame(fitFrame);
+    fitFrame=requestAnimationFrame(function(){
+      var bar=document.getElementById('bar'),s=slides[i],root=document.documentElement;
+      root.style.setProperty('--bar-height',bar.getBoundingClientRect().height+'px');
+      if(window.innerWidth<=760){root.style.fontSize='17px';return;}
+      var style=getComputedStyle(s),available=s.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+      var low=18,high=Math.min(36,Math.max(22,window.innerWidth/55)),best=18;
+      for(var n=0;n<9;n++){var size=(low+high)/2;root.style.fontSize=size+'px';if(s.scrollHeight<=s.clientHeight+1 && s.querySelector('.wrap').getBoundingClientRect().height<=available-4){best=size;low=size;}else high=size;}
+      root.style.fontSize=best.toFixed(2)+'px';
+    });
+  }
+  var fullscreenBtn=document.getElementById('fullscreenBtn');
+  async function toggleFullscreen(){
+    var status=document.getElementById('fullscreenStatus');status.hidden=true;
+    try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else throw new Error('unsupported');}
+    catch(e){status.textContent='Celá obrazovka není v tomto prohlížeči dostupná. Na počítači zkuste klávesu F11.';status.hidden=false;setTimeout(function(){status.hidden=true;},6000);}
+  }
+  fullscreenBtn.onclick=toggleFullscreen;
+  document.addEventListener('fullscreenchange',function(){var active=!!document.fullscreenElement;fullscreenBtn.setAttribute('aria-pressed',String(active));fullscreenBtn.textContent=active?'⛶ Zpět do okna':'⛶ Celá obrazovka';fullscreenBtn.setAttribute('aria-label',active?'Ukončit celou obrazovku':'Celá obrazovka');fitSlide();});
+  window.addEventListener('resize',fitSlide);
+  document.addEventListener('toggle',fitSlide,true);
+  document.querySelectorAll('img').forEach(function(img){img.addEventListener('load',fitSlide);});
+  new MutationObserver(fitSlide).observe(document.getElementById('stage'),{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
+  if(document.fonts)document.fonts.ready.then(fitSlide);
   function render(){
     slides.forEach(function(s,n){s.classList.toggle('is-active',n===i);});
     document.getElementById('count').textContent=(i+1)+' / '+slides.length;
@@ -819,7 +871,8 @@
     document.getElementById('tmin').textContent=slides[i].dataset.title;
     list.querySelectorAll('li').forEach(function(li,n){li.classList.toggle('cur',n===i);li.firstChild.setAttribute('aria-current',n===i?'step':'false');});
     prev.disabled=i===0;next.disabled=i===slides.length-1;
-    window.scrollTo(0,0);
+    slides[i].scrollTop=0;
+    fitSlide();
   }
   function go(n){i=Math.max(0,Math.min(slides.length-1,n));render();}
   slides.forEach(function(s,n){var li=document.createElement('li'),b=document.createElement('button');b.type='button';b.textContent=(n+1)+'. '+s.dataset.title+(s.dataset.optional?' · volitelné':'');b.onclick=function(){go(n);closeMenu();};li.appendChild(b);list.appendChild(li);});
@@ -836,7 +889,7 @@
     }
     if(e.altKey||e.ctrlKey||e.metaKey||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
     if((e.key===' '||e.key==='Enter')&&e.target.closest('button,a,summary'))return;
-    switch(e.key){case 'ArrowRight':case 'PageDown':case ' ':e.preventDefault();go(i+1);break;case 'ArrowLeft':case 'PageUp':e.preventDefault();go(i-1);break;case 'Home':e.preventDefault();go(0);break;case 'End':e.preventDefault();go(slides.length-1);break;case 'o':case 'O':openMenu();break;}
+    switch(e.key){case 'ArrowRight':case 'PageDown':case ' ':e.preventDefault();go(i+1);break;case 'ArrowLeft':case 'PageUp':e.preventDefault();go(i-1);break;case 'Home':e.preventDefault();go(0);break;case 'End':e.preventDefault();go(slides.length-1);break;case 'o':case 'O':openMenu();break;case 'f':case 'F':e.preventDefault();toggleFullscreen();break;}
   });
   var start=null;
   document.addEventListener('touchstart',function(e){start=null;if(!menu.classList.contains('open')&&e.touches.length===1&&!e.target.closest('button,a,summary,input,textarea'))start={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
