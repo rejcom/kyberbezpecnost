@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="cs" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -11,12 +11,12 @@
      fixed top progress rail + bottom control bar, scrollable content slides.
      Demo links are cards with a real screenshot thumbnail + plain-language explainer. */
   :root{
-    --bg:#f4f6fb; --bg-2:#ffffff; --panel:#ffffff; --panel-2:#eef1f8;
-    --fg:#141a2b; --muted:#56607a; --faint:#8a93a8;
-    --line:#dce1ee; --line-2:#c7cde0;
-    --accent:#0a7ea4; --accent-2:#0369a1; --accent-soft:#e2f1f7;
-    --warn:#b45309; --warn-soft:#fdf0dd; --danger:#be1240; --danger-soft:#fbe4ea; --ok:#15803d;
-    --shadow:0 1px 2px rgba(20,26,43,.06),0 8px 24px rgba(20,26,43,.08);
+    --bg:#f8f9ff; --bg-2:#ffffff; --panel:#ffffff; --panel-2:#f0f1fc;
+    --fg:#252a40; --muted:#657086; --faint:#717b91;
+    --line:#e3e5f2; --line-2:#cfd3e8;
+    --accent:#7066c5; --accent-2:#6054ac; --accent-soft:#eeefff;
+    --warn:#a65320; --warn-soft:#fff3e8; --danger:#b52d2b; --danger-soft:#fff0ef; --ok:#23805b;
+    --shadow:0 2px 4px rgba(37,42,64,.025),0 14px 36px rgba(86,77,145,.07);
     --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
     --sans:"IBM Plex Sans",system-ui,"Segoe UI",Roboto,sans-serif;
     --display:"Sora","IBM Plex Sans",system-ui,sans-serif;
@@ -218,6 +218,39 @@
     .title h1{font-size:clamp(2rem,9vw,3.5rem)}
   }
   .theory-question{margin-top:24px}.theory-question h3{font-size:1.3rem;line-height:1.4}.test-options{padding-left:2em}.test-options li{padding:10px 14px;margin:10px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+  /* Visual identity inspired by the supplied AI Štít reference. */
+  .slide{background:radial-gradient(ellipse at 100% 0,rgba(112,102,197,.055),transparent 58%),var(--bg)}
+  h1,h2,h3{letter-spacing:-.035em}
+  .eyebrow{display:table;padding:.45em .9em;border-radius:999px;background:var(--accent-soft);font-family:var(--sans);font-weight:600;letter-spacing:.1em;font-size:.7rem}
+  .title h1 em{color:var(--accent);font-style:normal}
+  .title .sub{max-width:52ch;line-height:1.6}
+  .chip{font-family:var(--sans);background:var(--panel);padding:.4em .85em;border-color:var(--line)}
+  .panel,.mock,a.demo,.orow{border-radius:22px;box-shadow:var(--shadow)}
+  .panel{border-top:3px solid var(--accent-soft)}
+  .dbody{padding:16px 18px}.dname{font-family:var(--display);letter-spacing:-.025em}
+  a.demo:hover{box-shadow:0 16px 38px rgba(112,102,197,.14)}
+  .note,.reveal,.feedback{border-radius:18px}
+  .divider .big{opacity:.15}.divider h2{max-width:22ch}
+  .flow span{border:1px solid var(--line);background:var(--panel);border-radius:16px;box-shadow:var(--shadow);color:var(--accent-2)}
+  .ten li{padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+  #bar{background:rgba(255,255,255,.94);box-shadow:0 -4px 24px rgba(37,42,64,.035)}
+  #bar button,#closeMenu,#menu .menu-tools button{border-radius:999px}
+  #bar #next{background:var(--accent);color:white;border-color:var(--accent);padding-left:18px;padding-right:18px}
+  #bar #next:hover{background:var(--accent-2)}
+  .brand-mark{display:inline-flex;align-items:center;gap:12px;margin-bottom:28px;font-family:var(--display);font-weight:700;font-size:1rem;letter-spacing:-.025em}
+  .brand-mark svg{width:46px;height:46px;padding:10px;border-radius:14px;background:linear-gradient(135deg,#727bea,#7550a2);color:white;flex-shrink:0}
+  .brand-mark small{display:block;font-family:var(--sans);font-weight:400;font-size:.65rem;color:var(--muted);letter-spacing:0}
+  .conference-layout{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(260px,1fr);gap:clamp(24px,3vw,56px);align-items:center;margin-top:26px}
+  .conference-photo{margin:0;min-width:0}
+  .conference-photo a{display:block;border-radius:24px;overflow:hidden;box-shadow:0 20px 50px rgba(37,42,64,.14)}
+  .conference-photo img{display:block;width:100%;height:auto;max-height:62dvh;object-fit:contain;background:#252a40}
+  .conference-photo figcaption{font-size:.72rem;color:var(--muted);margin-top:12px}
+  .conference-copy h3{font-size:clamp(1.25rem,2.4vw,2rem);line-height:1.2}
+  .conference-copy p{color:var(--muted)}
+  .project-link{display:inline-flex;align-items:center;gap:12px;background:linear-gradient(120deg,#ce3933,#a82727);color:white;text-decoration:none;padding:14px 22px;border-radius:16px;font-weight:600;box-shadow:0 12px 26px rgba(181,45,43,.14)}
+  .project-link:hover{background:#a82727}
+  @media(max-width:760px){.conference-layout{grid-template-columns:1fr}.conference-photo img{max-height:none}.brand-mark{margin-bottom:22px}}
+  @media print{.slide{background:white}.conference-photo img{max-height:120mm}.conference-layout{grid-template-columns:1.6fr 1fr}.project-link{background:white;color:var(--accent);box-shadow:none}}
 </style>
 </head>
 <body>
@@ -229,8 +262,9 @@
   <!-- 1 TITLE -->
   <section class="slide title" data-title="Úvod">
     <div class="wrap">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg><span>Bezpečný stát<small>Společně pro bezpečnější život</small></span></div>
       <div class="eyebrow">ECDL / ICDL · Sylabus 2.1</div>
-      <h1>Bezpečné používání<br>informačních technologií</h1>
+      <h1><em>Bezpečné používání</em><br>informačních technologií</h1>
       <p class="sub">Modul 12 — Cyber Security. Školení s živými ukázkami a odkazy na reálné nástroje.</p>
       <p class="lead" style="margin-top:18px">Autor: Karel Rejthar, SmartEdu s.r.o.<br>Metodik digitálního vzdělávání Plzeňského kraje</p>
       <div class="brandline">
@@ -770,7 +804,28 @@
 
   <!-- 21 Czech tools -->
 <section class="slide" data-title="Záloha má cenu, když ji obnovíte"><div class="wrap"><div class="eyebrow">12.7.1 · ukázka 5 minut</div><h2>Záloha má cenu, když ji obnovíte</h2><div class="flow"><span>Pracovní soubor</span><span>Samostatná záloha</span><span>Ztráta pracovní kopie</span><span>Obnova a ověření</span></div><div class="lesson-grid"><div class="panel"><h3>Plán zálohování</h3><p><b>3-2-1:</b> tři kopie včetně originálu, dvě různé technologie/média, jedna kopie mimo místo práce. Offline či neměnná kopie zvyšuje odolnost.</p><p><b>NAS:</b> síťové úložiště. USB, externí disk, NAS i cloud mohou být cílem zálohy; samotné další úložiště ještě není plán.</p><p>Stanovte co, jak často, kam, na jak dlouho, kdo a jak ověří obnovu. <b>Komprese</b> zmenší data; není to šifrování.</p></div><div class="panel"><h3>Rozdíl na příkladu</h3><p><b>Synchronizace:</b> změnu či smazání může přenést i do dalších zařízení.</p><p><b>Záloha:</b> uchovává obnovitelnou kopii či starší stav podle nastavených pravidel.</p><p><b>Verzování:</b> historie změn; ověřte délku uchování a možnosti obnovy. Cloud může mít zálohovací funkce, ale je nutné je skutečně nastavit a vyzkoušet.</p></div></div></div></section><section class="slide" data-title="Cvičení: soubor zmizel. Obnovte ho."><div class="wrap"><div class="eyebrow">12.7.1.4–12.7.1.5 · 8 minut</div><h2>Cvičení: soubor zmizel. Obnovte ho.</h2><div class="lesson-grid"><div class="panel"><h3>Pracujte jen s cvičnou kopií</h3><ol><li><a href="exercises/obnova.txt" download>Stáhněte cvičný soubor</a> do složky Prace.</li><li>Zkopírujte ho do složky Zaloha, ideálně na jiné dostupné úložiště.</li><li>V Prace změňte obsah a pak tuto pracovní kopii smažte.</li><li>Ze Zaloha obnovte soubor do nové složky Obnoveno.</li><li>Otevřete ho a ověřte původní text i kontrolní kód.</li></ol><p>Dvě složky na jednom disku slouží pouze pro nácvik; nechrání proti poruše disku.</p></div><div class="panel"><h3>Jak poznáte úspěch?</h3><p>Obnovený soubor je čitelný, má původní obsah a kód. Původní záložní kopie stále existuje.</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Kontrolní kód: ZALOHA-321. Obnova má proběhnout ze samostatné kopie, nikoli pouze z koše. Pro skutečný plán přidejte jiné médium, kopii mimo místo práce a pravidelný test.</p></details><p>Ve dvojici navrhněte zálohování rodinných fotografií: jaké kopie, četnost a kdo bude obnovu kontrolovat?</p></div></div></div></section><section class="slide" data-title="Mazání, vyřazení a fyzická ochrana"><div class="wrap"><div class="eyebrow">12.7.1.1 · 12.7.2</div><h2>Mazání, vyřazení a fyzická ochrana</h2><div class="lesson-grid"><div class="panel"><h3>Smazat není vždy odstranit</h3><p>Koš umožňuje obnovu. Ani jeho vyprázdnění samo nezaručí odstranění všech dat z média.</p><p>HDD, SSD, telefon a cloud vyžadují odlišné postupy. U SSD nelze spoléhat na běžné přepsání jednotlivého souboru.</p><p>Cloudové kopie, zálohy a sdílení mohou přetrvat smazání. Před prodejem zařízení využijte postup výrobce nebo IT, ověřte zálohu i výsledek sanitizace.</p></div><div class="panel"><h3>Než odejdete od stolu</h3><p>Zamkněte obrazovku, nenechávejte zařízení bez dozoru, omezte fyzický přístup a podle prostředí využijte kabelový zámek či zabezpečenou místnost.</p><p>Šifrování pomáhá při odcizení uzamčeného zařízení; záloha pomáhá při jeho ztrátě. Jde o dvě různé potřeby.</p><p><b>Miniúkol:</b> proč nestačí před prodejem notebooku smazat složku Dokumenty?</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Mohou zůstat obnovitelná data, jiné účty, cache, uložené přístupy i další kopie. Je nutné řešit celé zařízení a postup odpovídající jeho úložišti.</p></details></div></div></div></section><section class="slide" data-title="Cvičení: hlas znám, žádost ověřím"><div class="wrap"><div class="eyebrow">12.8 · 4 minuty</div><h2>Cvičení: hlas znám, žádost ověřím</h2><div class="lesson-grid"><div class="panel"><h3>Modelový telefonát</h3><div class="mock"><div class="mock-label">SCÉNÁŘ PRO DVOJICI</div>„Ahoj, tady šéf. Jsem na jednání, pošli hned platbu na nový účet. Nikomu nevolej.“</div><p>Jeden čte scénář, druhý reaguje. Navrhněte ověřovací postup, který nezávisí na tom, zda hlas zní přirozeně.</p><details class="reveal"><summary>Zobrazit řešení a vysvětlení</summary><p>Pozastavit platbu, hovor ukončit, zavolat na dříve známý kontakt a dodržet schvalování plateb. Doplňkově použít předem domluvené ověření; veřejně zjistitelná osobní fakta nestačí.</p></details></div><div class="panel"><h3>Obrázek a video ověřujte obdobně</h3><ol><li>Najděte původní zdroj a datum.</li><li>Vyhledejte snímek zpětně, porovnejte kontext.</li><li>Prohlédněte metadata cvičného souboru, pokud existují.</li><li>Hledejte nezávislé potvrzení.</li></ol><p>Neobvyklý rytmus hlasu, textura, geometrie a rty mohou vzbudit podezření; jejich absence pravost nedokazuje. Ani AI detektor není konečný důkaz.</p></div></div></div></section><section class="slide" data-title="Co uděláte v prvních minutách?"><div class="wrap"><div class="eyebrow">Praktické reakce · 3 minuty</div><h2>Co uděláte v prvních minutách?</h2><div class="lesson-grid"><div class="panel"><h3>Zadal jsem heslo na cizím webu</h3><p>Otevřete skutečnou službu známou cestou. Z důvěryhodného zařízení změňte heslo, ukončete jiné relace a prověřte MFA a obnovovací údaje. Změňte i stejné heslo použité jinde.</p><p>U pracovního účtu ihned kontaktujte IT. Při vyzrazení platebních údajů kontaktujte banku jejím oficiálním kanálem.</p></div><div class="panel"><h3>Spustil jsem podezřelou přílohu</h3><p>Přestaňte na zařízení pracovat, odpojte jej od sítě a kontaktujte IT jiným zařízením. Řiďte se pokyny; nemažte důkazy ani bez rozmyslu nepřipojujte záložní disk.</p><p>Poznamenejte čas, soubor a provedené kroky. Samotné zavření okna nevrací situaci do bezpečného stavu.</p></div></div></div></section><section class="slide" data-title="Závěrečný kvíz: vysvětlete své rozhodnutí"><div class="wrap"><div class="eyebrow">5 minut · společné vyhodnocení</div><h2>Závěrečný kvíz: vysvětlete své rozhodnutí</h2><div class="lesson-grid"><div class="panel"><h3>Web a příloha</h3><div class="quiz"><h3>Web má HTTPS. Co víte?</h3><button class="answer" aria-pressed="false" data-correct="false">Je určitě poctivý</button><button class="answer" aria-pressed="false" data-correct="true">Spojení je chráněné; poctivost tím není zaručena</button><p class="feedback" role="status" hidden data-explanation="HTTPS chrání přenos a ověřuje spojení podle certifikátu. I podvodný web může mít platný certifikát."></p></div><div class="quiz"><h3>Antivir nic nenašel. Mohu spustit nečekanou přílohu?</h3><button class="answer" aria-pressed="false" data-correct="false">Ano, výsledek je záruka</button><button class="answer" aria-pressed="false" data-correct="true">Nejdřív nezávisle ověřím původ a účel</button><p class="feedback" role="status" hidden data-explanation="Nulová detekce nezaručuje bezpečnost. Ověřte neočekávanou žádost známým kontaktem."></p></div></div><div class="panel"><h3>Data a identita</h3><div class="quiz"><h3>Co ověří použitelnost zálohy?</h3><button class="answer" aria-pressed="false" data-correct="true">Úspěšná zkušební obnova</button><button class="answer" aria-pressed="false" data-correct="false">Ikona cloudu</button><p class="feedback" role="status" hidden data-explanation="Zkušební obnova ověří dostupnost a čitelnost konkrétních dat; sama ikona nic takového nedokládá."></p></div><div class="quiz"><h3>Volající zní přesně jako kolega a chce kód. Co dál?</h3><button class="answer" aria-pressed="false" data-correct="false">Sdělím jej</button><button class="answer" aria-pressed="false" data-correct="true">Odmítnu a ověřím požadavek známým kanálem</button><p class="feedback" role="status" hidden data-explanation="Podoba hlasu není důkaz identity. Přihlašovací kódy nesdělujte druhým."></p></div></div></div></div></section>
-  <section class="slide" data-title="České nástroje" data-optional="true">
+  <section class="slide conference" data-title="Bezpečný stát na konferenci">
+  <div class="wrap">
+    <div class="eyebrow">Bezpečný stát · z praxe</div>
+    <h2>Bezpečnější svět začíná <span style="color:var(--accent)">sdílením zkušeností.</span></h2>
+    <div class="conference-layout">
+      <figure class="conference-photo">
+        <a href="images/karel-rejthar-bezpecny-stat-konference.png" target="_blank" rel="noopener" aria-label="Otevřít fotografii Karla Rejthara z konference v plné velikosti">
+          <img src="images/karel-rejthar-bezpecny-stat-konference.png" width="1638" height="1052" alt="Karel Rejthar představuje projekt BezpečnýStát.cz na konferenci AI ve veřejné správě 2026." loading="lazy">
+        </a>
+        <figcaption>Karel Rejthar · Konference AI ve veřejné správě 2026</figcaption>
+      </figure>
+      <div class="conference-copy">
+        <span class="chip ref">Společně pro bezpečnější život</span>
+        <h3 style="margin-top:20px">Od zkušeností škol<br>k Bezpečnému státu</h3>
+        <p>Představení projektu BezpečnýStát.cz a krizové komunikace pro veřejnou správu.</p>
+        <p>Na bezpečnost v každodenním digitálním životě navazuje <b>AI Štít</b> — pomoc s podezřelými zprávami, screenshoty a odkazy.</p>
+        <a class="project-link" href="https://stit.bezpecnystat.cz" target="_blank" rel="noopener">Vyzkoušet AI Štít <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="slide" data-title="České nástroje" data-optional="true">
     <div class="wrap"><div class="optional-label">Volitelné · pouze při časové rezervě</div>
       <div class="eyebrow">České řešení</div>
       <h2>Bezpečnost od nás — BezpečnýStát.cz</h2>
